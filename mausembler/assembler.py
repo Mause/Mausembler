@@ -41,7 +41,7 @@ class Assembler():
             del file
             self.output_file = io.open(self.output_filename, 'wb')
         self.labels = {}
-        print 'The cpu will be told to;'
+        print '\nThe cpu will be told to;'
         for self.line_number in range(len(data)):
             line = data[self.line_number]
             line = line.rstrip()
@@ -64,7 +64,7 @@ class Assembler():
                     raise DuplicateLabelError(opcode[0][1:])
             if opcode[0] == 'SET':
                 print '* set memory location', opcode[1], 'to', opcode[2]
-                processed = processed << self.ops[opcode[0]]
+                self.output_file.write(str(self.ops[opcode[0]]))
             return processed
         else:
             print '* do nothing for this line'
