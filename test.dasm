@@ -2,6 +2,15 @@ set a, 1
 set b, 2
 set c, 3
 
+add a, b
+add a,c
 
 :hello
 :world
+
+
+
+:label
+    SET A, 10
+    SET B, 0x20
+    ADD A, B
