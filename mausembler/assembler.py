@@ -14,10 +14,11 @@ class Assembler():
         print "Quick&Dirty, remember that"
     def parse(self, opcode):
         opcode[0]=opcode[0].upper()
-        processed=''
-        print 'Okay, this looks like a', opcode[0]
-        if opcode[0] == 'SET': print 'This is a set';(str(processed)+str(self.ops[opcode[0]]))
-        print 'Processed:',processed+'\n'
+        processed=0
+        if opcode[0] == 'SET':
+            print 'This is a set';
+            processed = processed << self.ops[opcode[0]]
+        print 'Processed:',str(processed)+'\n'
         return processed
     def load(self):
         if os.path.exists(self.input_filename):
