@@ -3,5 +3,5 @@ import sys
 from mausembler import Assembler
 
 
-test = Assembler(sys.argv)
-test.load()
+test = Assembler()
+test.load(sys.argv[1], sys.argv[2])
