@@ -1,6 +1,7 @@
 #!/bin/python
 
 import sys,os
+from custom_errors import *
 
 class Assembler():
     def __init__(self, filename='null.txt', data=[]):
@@ -11,15 +12,22 @@ class Assembler():
         self.registers={'A':0x0,'B':0x1,'C':0x2,'X':0x3,'Y':0x4,'Z':0x5,'I':0x6,'J':0x7}
         self.input_filename = filename[1]
         self.output_filename = filename[2]
-        print "Quick&Dirty, remember that"
+        print "Mausembler; self titled!\n"
     def parse(self, opcode):
-        opcode[0]=opcode[0].upper()
-        processed=0
-        if opcode[0] == 'SET':
-            print 'This is a set';
-            processed = processed << self.ops[opcode[0]]
-        print 'Processed:',str(processed)+'\n'
-        return processed
+        if opcode != []:
+            opcode[0]=opcode[0].upper()
+            processed=0
+            if opcode[0][0] == ':':
+                if opcode[0][1:] not in self.labels:
+                    self.labels[opcode[0][1:]] = self.line_number
+                else:
+                    raise DuplicateLabelError(opcode[0][1:])
+            if opcode[0] == 'SET':
+                print 'This is a set';
+                print 'I will tell the cpu to;'
+                print '     set memory location', opcode[1], 'to', opcode[2]
+                processed = processed << self.ops[opcode[0]]
+            return processed
     def load(self):
         if os.path.exists(self.input_filename):
             fh=open(self.input_filename, 'rb')
@@ -27,9 +35,13 @@ class Assembler():
             fh.close()
         else:
             print 'are you sure that file exists?'
-
-        for line in data:
-            print line
-            print 'Proccessed:', self.parse(line.split())
-
-
+        self.labels = {}
+        for self.line_number in range(len(data)):
+            line = data[self.line_number]
+            print line,
+            line = line.rstrip()
+            line = line.strip(',')
+            line = line.split()
+            print 'Line:', line
+            print 'Processed:', str(self.parse(line))+'\n'
+        print self.labels
