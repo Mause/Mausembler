@@ -1,5 +1,7 @@
 #!/bin/python
 
+# This is a Quick & Dirty assembler :P
+
 import sys
 import os
 import io
