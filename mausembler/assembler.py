@@ -12,7 +12,7 @@ from mausembler.sparser import Sparser
 
 
 class Assembler():
-    def __init__(self): #, data=[]):
+    def __init__(self):
         self.ops = {'SET': 0x1, 'ADD': 0x2, 'SUB': 0x3, 'MUL': 0x4,
                   'DIV': 0x5, 'MOD': 0x6, 'SHL': 0x7, 'SHR': 0x8,
                   'AND': 0x9, 'BOR': 0xa, 'XOR': 0xb, 'IFE': 0xc,
@@ -29,14 +29,13 @@ class Assembler():
         self.data_done=[]
         self.data=''
         self.sparser=Sparser()
-        print "Mausembler; self titled!\n"
+        print "Mausembler; self-titled!\n"
 
     def determine_dependencies(self, data):
-        print "###########################Determining dependencies..."
+        print "Determining dependencies..."
         if data not in self.data_done:
             self.data_done.append(data)
         else:
-            print 'Give me something new!'
             return
         for line in data:
             if line[0] == '.':
@@ -47,6 +46,9 @@ class Assembler():
             self.load(dep, ''.join(dep.split('.')[:-1])+'bin')
 #self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
     def load(self, input_filename='null.txt', output_filename='null.bin'):
+        print 'Loading file:', str(input_filename)
+        print 'I will be writing into:', str(output_filename)
+        print
         #self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
         self.dep_path.append('\\'.join(os.path.abspath(input_filename).split('\\')[:-1]))
         print 'self.dep_path:', str(self.dep_path)
@@ -68,19 +70,10 @@ class Assembler():
                         print 'hurruh!'
                         input_filename = poss
                         break
-#                if os.path.exists(self.dep_path[x]+'\\'+cur_input_filename.split('\\')[-1]):
- #                   input_filename = self.dep_path[x]+'\\'+cur_input_filename
-  #                  break
-   #             if os.path.exists(os.getcwd()+'\\'+self.dep_path[x]+'\\'+cur_input_filename):
-    #                input_filename = self.dep_path[x]+'\\'+cur_input_filename
-     #               break
-      #          if os.path.exists(os.getcwd()+'\\'+self.dep_path[x]+'\\'+cur_input_filename.split('\\')[-1]):
-       #             input_filename = self.dep_path[x]+'\\'+cur_input_filename
-        #            break
             if not os.path.exists(input_filename):
                 print 'are you sure that the specified file exists?\n\n'
                 raise FileNonExistantError(input_filename)
-        print 'i should be here'
+        print
         if os.path.exists(cur_input_filename):
             FH = open(input_filename, 'rb')
             self.data = FH.readlines()
@@ -107,7 +100,6 @@ class Assembler():
             opcode = opcode.replace(',', ' ')
             opcode = opcode.split()
             str(self.preparse(opcode, input_filename))
-        #self.output_file.close()
         print '\nDependencies:', str(self.dependencies)
         print 'Labels:', [label for label in self.labels]
         #self.output_file.close()
