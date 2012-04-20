@@ -8,6 +8,7 @@ import io
 from mausembler.custom_errors import DuplicateLabelError
 from mausembler.custom_errors import FileNonExistantError
 from mausembler.custom_errors import FileExistsError
+from mausembler.sparser import Sparser
 
 
 class Assembler():
@@ -25,10 +26,18 @@ class Assembler():
         self.dependencies = []
         self.dep_path=[]
         self.labels = {}
+        self.data_done=[]
         self.data=''
+        self.sparser=Sparser()
         print "Mausembler; self titled!\n"
 
     def determine_dependencies(self, data):
+        print "###########################Determining dependencies..."
+        if data not in self.data_done:
+            self.data_done.append(data)
+        else:
+            print 'Give me something new!'
+            return
         for line in data:
             if line[0] == '.':
                 if line.split()[0] == '.include':
@@ -38,13 +47,14 @@ class Assembler():
             self.load(dep, ''.join(dep.split('.')[:-1])+'bin')
 #self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
     def load(self, input_filename='null.txt', output_filename='null.bin'):
-        self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
+        #self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
+        self.dep_path.append('\\'.join(os.path.abspath(input_filename).split('\\')[:-1]))
         print 'self.dep_path:', str(self.dep_path)
         cur_input_filename = input_filename
-        print 'manual:',os.getcwd()+input_filename
+
         if os.path.exists(os.getcwd()+'\\'+input_filename):
             input_filename = os.getcwd()+'\\'+input_filename
-        while not os.path.exists(cur_input_filename):
+        while not os.path.exists(input_filename):
             for x in range(len(self.dep_path)):
                 print 'Poss'
                 possibles=[(self.dep_path[x]+'\\'+cur_input_filename),
@@ -55,6 +65,7 @@ class Assembler():
                     print 'Poss:',poss
                     print os.path.exists(poss)
                     if os.path.exists(poss):
+                        print 'hurruh!'
                         input_filename = poss
                         break
 #                if os.path.exists(self.dep_path[x]+'\\'+cur_input_filename.split('\\')[-1]):
@@ -66,14 +77,17 @@ class Assembler():
       #          if os.path.exists(os.getcwd()+'\\'+self.dep_path[x]+'\\'+cur_input_filename.split('\\')[-1]):
        #             input_filename = self.dep_path[x]+'\\'+cur_input_filename
         #            break
-            print 'are you sure that file exists?\n\n'
-            raise FileNonExistantError(input_filename)
+            if not os.path.exists(input_filename):
+                print 'are you sure that the specified file exists?\n\n'
+                raise FileNonExistantError(input_filename)
+        print 'i should be here'
         if os.path.exists(cur_input_filename):
             FH = open(input_filename, 'rb')
             self.data = FH.readlines()
             FH.close()
         if os.path.exists(output_filename):
-            cont = raw_input('Output file exists. Overwrite? ')
+            #cont = raw_input('Output file exists. Overwrite? ') # commenting this line out while testing
+            cont='yes'
             if cont.lower() in ['yes', 'y']:
                 self.output_file = io.open(output_filename, 'wb')
             else:
@@ -88,16 +102,17 @@ class Assembler():
         self.determine_dependencies(self.data)
         print '\nThe cpu will be told to;'
         for self.line_number in range(len(self.data)):
-            line = self.data[self.line_number]
-            line = line.rstrip()
-            line = line.replace(',', ' ')
-            line = line.split()
-            str(self.parse(line))
-        self.output_file.close()
+            opcode = self.data[self.line_number]
+            opcode = opcode.rstrip()
+            opcode = opcode.replace(',', ' ')
+            opcode = opcode.split()
+            str(self.preparse(opcode, input_filename))
+        #self.output_file.close()
         print '\nDependencies:', str(self.dependencies)
-        print 'Labels:', str(self.labels)
+        print 'Labels:', [label for label in self.labels]
+        #self.output_file.close()
 
-    def parse(self, opcode):
+    def preparse(self, opcode, input_filename):
         if opcode != []:
             opcode[0] = opcode[0].upper()
             processed = 0
@@ -106,11 +121,13 @@ class Assembler():
                     print '* remember line', str(self.line_number),
                     print 'as label "' + opcode[0][1:] + '"'
                     self.labels[opcode[0][1:]] = self.line_number
-                else:
-                    raise DuplicateLabelError(opcode[0][1:])
+                    if self.line_number != self.labels[opcode[0][1:]]:
+                        raise DuplicateLabelError([opcode[0][1:], input_filename,
+                                                   self.labels, self.line_number])
             if opcode[0] == 'SET':
                 print '* set memory location', opcode[1], 'to', opcode[2]
-                self.output_file.write(str(self.ops[opcode[0]]))
+                self.sparser.parse(opcode)
+                #self.output_file.write(str(self.ops[opcode[0]]))
             if opcode[0] == 'ADD':
                 print '* set', opcode[1], 'to', opcode[1], '+', opcode[2]
                 self.output_file.write(str(self.ops[opcode[0]]))
