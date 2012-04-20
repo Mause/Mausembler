@@ -10,9 +10,31 @@ import re
 class Sparser():
     def __init__(self, ):
         print 'Sparser; self-titled!'
-    def parse(self, opcode):
+    def parse(self, opcode, ops, registers, output_file):
+        self.ops = ops
+        self.registers = registers
+        self.output_file = output_file
+        if opcode[0] == 'SET':
+            print '* set memory location', opcode[1], 'to', opcode[2]
+            self.output_file.write(str(self.ops[opcode[0]]))
+        if opcode[0] == 'ADD':
+            print '* set', opcode[1], 'to', opcode[1], '+', opcode[2]
+            self.output_file.write(str(self.ops[opcode[0]]))
+        if opcode[0] == 'SUB':
+            print '* set', opcode[1], 'to', opcode[1], '-', opcode[2]
+            self.output_file.write(str(self.ops[opcode[0]]))
+        if opcode[0] == 'MUL':
+            print '* set', opcode[1], 'to', opcode[1], '*', opcode[2]
+            self.output_file.write(str(self.ops[opcode[0]]))
+        if opcode[0] == 'DIV':
+            print '* set', opcode[1], 'to', opcode[1], '/', opcode[2]
+            self.output_file.write(str(self.ops[opcode[0]]))
+        if opcode[0] == 'MOD':
+            print '* set', opcode[1], 'to', opcode[1], '%', opcode[2]
+            self.output_file.write(str(self.ops[opcode[0]]))
         scanner = re.Scanner([
-            (r"[a-zA-Z_]\w*", self.s_set),
+            #(r"[a-zA-Z_]\w*", self.s_set),
+            (r"[set]", self.s_set),
             (r"\d+\.\d*", self.s_add),
             (r"\d+", self.s_sub),
             (r"=|\+|-|\*|/", self.s_mul),
@@ -20,7 +42,7 @@ class Sparser():
             ])
 
         #print scanner.scan("sum = 3*foo + 312.50 + bar")
-        print 'Scanned:', scanner.scan(' '.join(opcode))
+        #print 'Scanned:', scanner.scan(' '.join(opcode))
 
 ###########################################################
 ## here follows individual code for the different opcodes #

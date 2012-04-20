@@ -124,25 +124,7 @@ class Assembler():
                     if self.line_number != self.labels[opcode[0][1:]]:
                         raise DuplicateLabelError([opcode[0][1:], input_filename,
                                                    self.labels, self.line_number])
-            if opcode[0] == 'SET':
-                print '* set memory location', opcode[1], 'to', opcode[2]
-                self.sparser.parse(opcode)
-                #self.output_file.write(str(self.ops[opcode[0]]))
-            if opcode[0] == 'ADD':
-                print '* set', opcode[1], 'to', opcode[1], '+', opcode[2]
-                self.output_file.write(str(self.ops[opcode[0]]))
-            if opcode[0] == 'SUB':
-                print '* set', opcode[1], 'to', opcode[1], '-', opcode[2]
-                self.output_file.write(str(self.ops[opcode[0]]))
-            if opcode[0] == 'MUL':
-                print '* set', opcode[1], 'to', opcode[1], '*', opcode[2]
-                self.output_file.write(str(self.ops[opcode[0]]))
-            if opcode[0] == 'DIV':
-                print '* set', opcode[1], 'to', opcode[1], '/', opcode[2]
-                self.output_file.write(str(self.ops[opcode[0]]))
-            if opcode[0] == 'MOD':
-                print '* set', opcode[1], 'to', opcode[1], '%', opcode[2]
-                self.output_file.write(str(self.ops[opcode[0]]))
+            self.sparser.parse(opcode, self.ops, self.registers, self.output_file)
             return processed
         else:
             print '* do nothing for this line'
