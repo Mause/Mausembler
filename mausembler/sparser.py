@@ -9,20 +9,19 @@ class Sparser():
         print 'Sparser; self-titled!'
 
     def parse(self, boss, opcode):
+        data_word = ()
         output_data = []
+        print '* '+str([x for x in opcode])
         if opcode[0] == 'SET':
+            print "Line number:", boss.line_number#, '\nopcode:', opcode, '\ndata:', str(opcode[1])
             print '* set memory location', opcode[1], 'to', opcode[2]
-            if opcode[2].upper() in boss.ops:
-                value_proper = boss.ops[opcode[2]]
-            elif opcode[2].upper() in boss.labels:
-                value_proper = 'PASS'
-            elif opcode[2].lower() in boss.labels:
-                value_proper = 'PASS'
-          #  elif:
+            if opcode[2].upper() in boss.ops: value_proper = boss.ops[opcode[2]]
+            elif opcode[2].upper() in boss.labels: value_proper = 'PASS'
+            elif opcode[2].upper() in boss.registers: value_proper = boss.registers[opcode[2]]
             else:
                 try:
-                    print '    * not working:',
-                    print opcode[2], ':', boss.ops[opcode[2].upper()]
+                    print '    * not working:',;
+                    print opcode[2], ':', boss.ops[opcode[2].upper()];
                 except KeyError:
                     print '\n    * definately not in there'
                 value_proper = opcode[2]
@@ -33,12 +32,11 @@ class Sparser():
                         value_proper = hex(value_proper)
                     except TypeError:
                         print '    * already in hex'
-                print 'value_proper:', str(value_proper)
-                value_proper = (value_proper.split('x')[1]).rjust(4, '0')
-
-            print "Line number:", boss.line_number
-            print 'opcode:', opcode
-            print 'data:', str(opcode[1])
+                #print 'value_proper:', str(value_proper),
+                print'\n'
+                if len(value_proper) != 4:
+                    print 'value_proper:', str(value_proper)
+                    value_proper = (value_proper.split('x')[1]).rjust(4, '0')
             output_data = ['0x1f', (boss.registers[opcode[1].upper()]),
                                 (boss.ops[opcode[0].upper()]), (value_proper)]
 
@@ -46,7 +44,6 @@ class Sparser():
                          str(output_data[1])+
                          str(output_data[2])+
                          str(output_data[3]))
-            #str((cur_line[2]&0000)
 
             output_data.append(data_word)
             del value_proper

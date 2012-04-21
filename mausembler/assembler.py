@@ -16,12 +16,22 @@ class Assembler():
                   'DIV': 0x5, 'MOD': 0x6, 'SHL': 0x7, 'SHR': 0x8,
                   'AND': 0x9, 'BOR': 0xa, 'XOR': 0xb, 'IFE': 0xc,
                   'IFN': 0xd, 'IFG': 0xe, 'IVB': 0xf}  # 'DAT':0x}
-        self.registers = {'A': 0x0, 'B': 0x1,
-                          'C': 0x2, 'X': 0x3,
-                          'Y': 0x4, 'Z': 0x5,
-                          'I': 0x6, 'J': 0x7,
+        self.registers = {'A': 0x00, 'B': 0x01,
+                          'C': 0x02, 'X': 0x03,
+                          'Y': 0x04, 'Z': 0x05,
+                          'I': 0x06, 'J': 0x07,
+                          '[A]': 0x08, '[B]': 0x09,
+                          '[C]': 0x0a, '[X]': 0x0b,
+                          '[Y]': 0x0c, '[Z]': 0x0d,
+                          '[I]': 0x0e, '[J]': 0x0f,
                           # Special registers
-                          'PC': 0x1c, 'POP': 0x18}
+                          # 0x10-0x17: [next word + register] goes here
+                          'POP': 0x18, '[SP++]': 0x18,
+                          'PEEK': 0x19, '[SP]': 0x19,
+                          'PUSH': 0x1a, '[--SP]': 0x1a,
+                          'SP': 0x1b, 'PC': 0x1c,
+                          'O': 0x1d, '[PC++]': 0x1e,
+                          'PC++': 0x1f}
         self.input_filename = ''
         self.output_filename = ''
         self.dependencies = []
@@ -115,35 +125,19 @@ class Assembler():
             self.conditioned_data.append(opcode)
 
         # this is the first loop; it'll find stuff like labels and shit
-#        for self.line_number in range(len(self.data)):
- #           opcode = self.data[self.line_number]
-  #          opcode = opcode.rstrip()
-   #         opcode = opcode.replace(',', ' ')
-    #        # for now the tokeniser assumes that there
-     #       # are no strings that contain semicolons
-      #      opcode = opcode.split(';')[0]
-       #     opcode = opcode.split()
         for opcode in self.conditioned_data:
             self.find_labels(opcode)
         print '\nThe cpu will be told to;'
+
         # this is the second loop; it'll do the actual assembling
-#        for self.line_number in range(len(self.data)):
- #           opcode = self.data[self.line_number]
-  #          opcode = opcode.rstrip()
-   #         opcode = opcode.replace(',', ' ')
-    #        # for now the tokeniser assumes that there are no strings that contain semicolons
-     #       opcode = opcode.split(';')[0]
-      #      opcode = opcode.split()
         for opcode in self.conditioned_data:
             str(self.parse(opcode, input_filename))
         print '\nDependencies:', str(self.dependencies)
         print 'Labels:', [label for label in self.labels]
         print '\n'
-        print self.tobe_written_data
-        print '\n\n'
         print "I'm just about to write all this shit to file :)\n\n"
         for line in self.tobe_written_data:
-            print line
+            print 'line:',line
             if line != '':
                 bytes = binascii.a2b_hex(line)
                 self.output_file.write(bytes)
@@ -159,18 +153,18 @@ class Assembler():
                 label_name = opcode[0][1:]
                 if label_name not in self.labels:
                     print '* remember line', str(self.line_number), 'as label "' + label_name + '"'
-                    self.labels[label_name] = self.line_number
-                    if self.line_number != self.labels[label_name]:
+                    if label_name in self.labels:
                         raise DuplicateLabelError([label_name, input_filename,
                                                    self.labels, self.line_number])
+                    self.labels[label_name.upper()] = self.line_number
             elif opcode[0][-1] == ':':
                 label_name = opcode[0][:-1]
                 if label_name not in self.labels:
                     print '* remember line', str(self.line_number), 'as label "' + label_name + '"'
-                    self.labels[label_name] = self.line_number
-                    if self.line_number != self.labels[label_name]:
+                    if label_name in self.labels:
                         raise DuplicateLabelError([label_name, input_filename,
                                                    self.labels, self.line_number])
+                    self.labels[label_name.upper()] = self.line_number
         else:
             print '* doing nothing for this line'
 
