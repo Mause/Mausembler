@@ -12,7 +12,6 @@ class Sparser():
         output_data = []
         if opcode[0] == 'SET':
             print '* set memory location', opcode[1], 'to', opcode[2]
-            boss.output_file.write(str(boss.ops[opcode[0]]))
             if opcode[2].upper() in boss.ops:
                 value_proper = boss.ops[opcode[2]]
             elif opcode[2].upper() in boss.labels:
