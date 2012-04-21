@@ -1,10 +1,9 @@
 #!/bin/python
-
 # This is a Quick & Dirty assembler :P
-
 
 import os
 import io
+import binascii
 from mausembler.custom_errors import DuplicateLabelError
 from mausembler.custom_errors import FileNonExistantError
 from mausembler.custom_errors import FileExistsError
@@ -20,15 +19,18 @@ class Assembler():
         self.registers = {'A': 0x0, 'B': 0x1,
                           'C': 0x2, 'X': 0x3,
                           'Y': 0x4, 'Z': 0x5,
-                          'I': 0x6, 'J': 0x7}
+                          'I': 0x6, 'J': 0x7,
+                          # Special registers
+                          'PC': 0x1c, 'POP': 0x18}
         self.input_filename = ''
         self.output_filename = ''
         self.dependencies = []
-        self.dep_path=[]
+        self.dep_path = []
         self.labels = {}
-        self.data_done=[]
-        self.data=''
-        self.sparser=Sparser()
+        self.data_done = []
+        self.data = ''
+        self.sparser = Sparser()
+        self.tobe_written_data = []
         print "Mausembler; self-titled!\n"
 
     def determine_dependencies(self, data):
@@ -43,31 +45,34 @@ class Assembler():
                     self.dependencies.append(
                         ((''.join(line.split()[1:])).strip('"')).strip("'"))
         for dep in self.dependencies:
-            self.load(dep, ''.join(dep.split('.')[:-1])+'bin')
+            self.load(dep, ''.join(dep.split('.')[:-1]) + 'bin')
 #self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
+
     def load(self, input_filename='null.txt', output_filename='null.bin'):
-        print 'Loading file:', str(input_filename)
-        print 'I will be writing into:', str(output_filename)
+        print 'Input file:', str(input_filename)
+        print 'Output file:', str(output_filename)
         print
         #self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
-        self.dep_path.append('\\'.join(os.path.abspath(input_filename).split('\\')[:-1]))
+        abspath = os.path.abspath(input_filename)
+        self.dep_path.append('\\'.join(abspath.split('\\')[:-1]))
+        del abspath
         print 'self.dep_path:', str(self.dep_path)
         cur_input_filename = input_filename
 
-        if os.path.exists(os.getcwd()+'\\'+input_filename):
-            input_filename = os.getcwd()+'\\'+input_filename
+        if os.path.exists(os.getcwd() + '\\' + input_filename):
+            input_filename = os.getcwd() + '\\' + input_filename
         while not os.path.exists(input_filename):
             for x in range(len(self.dep_path)):
-                print 'Poss'
-                possibles=[(self.dep_path[x]+'\\'+cur_input_filename),
-                           (self.dep_path[x]+'\\'+cur_input_filename.split('\\')[-1]),
-                           (os.getcwd()+'\\'+self.dep_path[x]+'\\'+cur_input_filename),
-                           (os.getcwd()+'\\'+self.dep_path[x]+'\\'+cur_input_filename.split('\\')[-1])]
+                possibles = [(self.dep_path[x] + '\\' + cur_input_filename),
+                             (self.dep_path[x] + '\\' + \
+                              cur_input_filename.split('\\')[-1]),
+                             (os.getcwd() + '\\' + self.dep_path[x] + '\\' + \
+                              cur_input_filename),
+                             (os.getcwd() + '\\' + self.dep_path[x] + '\\' + \
+                              cur_input_filename.split('\\')[-1])]
                 for poss in possibles:
-                    print 'Poss:',poss
-                    print os.path.exists(poss)
+#                    print os.path.exists(poss)
                     if os.path.exists(poss):
-                        print 'hurruh!'
                         input_filename = poss
                         break
             if not os.path.exists(input_filename):
@@ -79,8 +84,9 @@ class Assembler():
             self.data = FH.readlines()
             FH.close()
         if os.path.exists(output_filename):
-            #cont = raw_input('Output file exists. Overwrite? ') # commenting this line out while testing
-            cont='yes'
+            #cont = raw_input('Output file exists. Overwrite? ')
+            # ^ commenting this line out while testing
+            cont = 'yes'
             if cont.lower() in ['yes', 'y']:
                 self.output_file = io.open(output_filename, 'wb')
             else:
@@ -93,30 +99,84 @@ class Assembler():
             del FH
             self.output_file = io.open(output_filename, 'wb')
         self.determine_dependencies(self.data)
-        print '\nThe cpu will be told to;'
+        print "\nFinding labels..."
+
+        # these next couple of lines will conditions the data to
+        # prepare it for parsing
+        self.conditioned_data = []
         for self.line_number in range(len(self.data)):
             opcode = self.data[self.line_number]
             opcode = opcode.rstrip()
             opcode = opcode.replace(',', ' ')
+            # for now the tokeniser assumes that there
+            # are no strings that contain semicolons
+            opcode = opcode.split(';')[0]
             opcode = opcode.split()
-            str(self.preparse(opcode, input_filename))
+            self.conditioned_data.append(opcode)
+
+        # this is the first loop; it'll find stuff like labels and shit
+#        for self.line_number in range(len(self.data)):
+ #           opcode = self.data[self.line_number]
+  #          opcode = opcode.rstrip()
+   #         opcode = opcode.replace(',', ' ')
+    #        # for now the tokeniser assumes that there
+     #       # are no strings that contain semicolons
+      #      opcode = opcode.split(';')[0]
+       #     opcode = opcode.split()
+        for opcode in self.conditioned_data:
+            self.find_labels(opcode)
+        print '\nThe cpu will be told to;'
+        # this is the second loop; it'll do the actual assembling
+#        for self.line_number in range(len(self.data)):
+ #           opcode = self.data[self.line_number]
+  #          opcode = opcode.rstrip()
+   #         opcode = opcode.replace(',', ' ')
+    #        # for now the tokeniser assumes that there are no strings that contain semicolons
+     #       opcode = opcode.split(';')[0]
+      #      opcode = opcode.split()
+        for opcode in self.conditioned_data:
+            str(self.parse(opcode, input_filename))
         print '\nDependencies:', str(self.dependencies)
         print 'Labels:', [label for label in self.labels]
+        print '\n'
+        print self.tobe_written_data
+        print '\n\n'
+        print "I'm just about to write all this shit to file :)\n\n"
+        for line in self.tobe_written_data:
+            print line
+            if line != '':
+                bytes = binascii.a2b_hex(line)
+                self.output_file.write(bytes)
+        self.output_file.close()
+
         #self.output_file.close()
 
-    def preparse(self, opcode, input_filename):
+    def find_labels(self, opcode):
         if opcode != []:
             opcode[0] = opcode[0].upper()
             processed = 0
             if opcode[0][0] == ':':
-                if opcode[0][1:] not in self.labels:
-                    print '* remember line', str(self.line_number),
-                    print 'as label "' + opcode[0][1:] + '"'
-                    self.labels[opcode[0][1:]] = self.line_number
-                    if self.line_number != self.labels[opcode[0][1:]]:
-                        raise DuplicateLabelError([opcode[0][1:], input_filename,
+                label_name = opcode[0][1:]
+                if label_name not in self.labels:
+                    print '* remember line', str(self.line_number), 'as label "' + label_name + '"'
+                    self.labels[label_name] = self.line_number
+                    if self.line_number != self.labels[label_name]:
+                        raise DuplicateLabelError([label_name, input_filename,
                                                    self.labels, self.line_number])
-            self.sparser.parse(opcode, self.ops, self.registers, self.output_file)
-            return processed
+            elif opcode[0][-1] == ':':
+                label_name = opcode[0][:-1]
+                if label_name not in self.labels:
+                    print '* remember line', str(self.line_number), 'as label "' + label_name + '"'
+                    self.labels[label_name] = self.line_number
+                    if self.line_number != self.labels[label_name]:
+                        raise DuplicateLabelError([label_name, input_filename,
+                                                   self.labels, self.line_number])
+        else:
+            print '* doing nothing for this line'
+
+    def parse(self, opcode, input_filename):
+        if opcode != []:
+            opcode[0] = opcode[0].upper()
+            self.tobe_written_data.append( self.sparser.parse(self, opcode) )
         else:
             print '* do nothing for this line'

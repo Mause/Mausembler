@@ -1,79 +1,84 @@
-import re
-
 #def s_ident(self, scanner, token): return token
 #def s_operator(self, scanner, token): return "op%s" % token
 #def s_float(self, scanner, token): return float(token)
 #def s_int(self, scanner, token): return int(token)
 
 
-
 class Sparser():
     def __init__(self, ):
         print 'Sparser; self-titled!'
-    def parse(self, opcode, ops, registers, output_file):
-        self.ops = ops
-        self.registers = registers
-        self.output_file = output_file
+
+    def parse(self, boss, opcode):
+        output_data = []
         if opcode[0] == 'SET':
             print '* set memory location', opcode[1], 'to', opcode[2]
-            self.output_file.write(str(self.ops[opcode[0]]))
-        if opcode[0] == 'ADD':
-            print '* set', opcode[1], 'to', opcode[1], '+', opcode[2]
-            self.output_file.write(str(self.ops[opcode[0]]))
-        if opcode[0] == 'SUB':
-            print '* set', opcode[1], 'to', opcode[1], '-', opcode[2]
-            self.output_file.write(str(self.ops[opcode[0]]))
-        if opcode[0] == 'MUL':
-            print '* set', opcode[1], 'to', opcode[1], '*', opcode[2]
-            self.output_file.write(str(self.ops[opcode[0]]))
-        if opcode[0] == 'DIV':
-            print '* set', opcode[1], 'to', opcode[1], '/', opcode[2]
-            self.output_file.write(str(self.ops[opcode[0]]))
-        if opcode[0] == 'MOD':
-            print '* set', opcode[1], 'to', opcode[1], '%', opcode[2]
-            self.output_file.write(str(self.ops[opcode[0]]))
-        scanner = re.Scanner([
-            #(r"[a-zA-Z_]\w*", self.s_set),
-            (r"[set]", self.s_set),
-            (r"\d+\.\d*", self.s_add),
-            (r"\d+", self.s_sub),
-            (r"=|\+|-|\*|/", self.s_mul),
-            (r"\s+", self.s_div),
-            ])
+            boss.output_file.write(str(boss.ops[opcode[0]]))
+            if opcode[2].upper() in boss.ops:
+                value_proper = boss.ops[opcode[2]]
+            elif opcode[2].upper() in boss.labels:
+                value_proper = 'PASS'
+            elif opcode[2].lower() in boss.labels:
+                value_proper = 'PASS'
+          #  elif:
+            else:
+                try:
+                    print '    * not working:',
+                    print opcode[2], ':', boss.ops[opcode[2].upper()]
+                except KeyError:
+                    print '\n    * definately not in there'
+                value_proper = opcode[2]
+                print '    * value_proper:', str(value_proper)
+                print "    * boss's labels:", boss.labels
+                if value_proper[0:2] != '0x':
+                    try:
+                        value_proper = hex(value_proper)
+                    except TypeError:
+                        print '    * already in hex'
+                print 'value_proper:', str(value_proper)
+                value_proper = (value_proper.split('x')[1]).rjust(4, '0')
 
+            print "Line number:", boss.line_number
+            print 'opcode:', opcode
+            print 'data:', str(opcode[1])
+            output_data = ['0x1f', (boss.registers[opcode[1].upper()]),
+                                (boss.ops[opcode[0].upper()]), (value_proper)]
+
+            data_word = (str(output_data[0].split('x')[1])+
+                         str(output_data[1])+
+                         str(output_data[2])+
+                         str(output_data[3]))
+            #str((cur_line[2]&0000)
+
+            output_data.append(data_word)
+            del value_proper
+
+#        elif opcode[0] == 'ADD':
+ #           print '* set', opcode[1], 'to', opcode[1], '+', opcode[2]
+  #          boss.output_file.write(str(boss.ops[opcode[0]]))
+   #     elif opcode[0] == 'SUB':
+    #        print '* set', opcode[1], 'to', opcode[1], '-', opcode[2]
+     #       boss.output_file.write(str(boss.ops[opcode[0]]))
+      #  elif opcode[0] == 'MUL':
+       #     print '* set', opcode[1], 'to', opcode[1], '*', opcode[2]
+        #    boss.output_file.write(str(boss.ops[opcode[0]]))
+#        elif opcode[0] == 'DIV':
+ #           print '* set', opcode[1], 'to', opcode[1], '/', opcode[2]
+  #          boss.output_file.write(str(boss.ops[opcode[0]]))
+   #     elif opcode[0] == 'MOD':
+    #        print '* set', opcode[1], 'to', opcode[1], '%', opcode[2]
+     #       boss.output_file.write(str(boss.ops[opcode[0]]))
+
+        #return output_data
+        return data_word
+#        scanner = re.Scanner([
+ #           #(r"[a-zA-Z_]\w*", self.s_set),
+  #          (r"[set]", self.s_set),
+   #         (r"\d+\.\d*", self.s_add),
+    #        (r"\d+", self.s_sub),
+     #       (r"=|\+|-|\*|/", self.s_mul),
+      #      (r"\s+", self.s_div),
+       #     ])
+
+#print 'output_data['+str(boss.line_number)+'] =', str(output_data)#[-1])
         #print scanner.scan("sum = 3*foo + 312.50 + bar")
         #print 'Scanned:', scanner.scan(' '.join(opcode))
-
-###########################################################
-## here follows individual code for the different opcodes #
-###########################################################
-    def s_set(self, scanner, token):
-        "0x1"
-    def s_add(self, scanner, token):
-        "0x2"
-    def s_sub(self, scanner, token):
-        "0x3"
-    def s_mul(self, scanner, token):
-        "0x4"
-    def s_div(self, scanner, token):
-        "0x5"
-    def s_mod(self, scanner, token):
-        "0x6"
-    def s_shl(self, scanner, token):
-        "0x7"
-    def s_shr(self, scanner, token):
-        "0x8"
-    def s_and(self, scanner, token):
-        "0x9"
-    def s_bor(self, scanner, token):
-        "0xa"
-    def s_xor(self, scanner, token):
-        "0xb"
-    def s_ife(self, scanner, token):
-        "0xc"
-    def s_ifn(self, scanner, token):
-        "0xd"
-    def s_ifg(self, scanner, token):
-        "0xe"
-    def s_ivb(self, scanner, token):
-        "0xf"
