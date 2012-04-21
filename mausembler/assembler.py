@@ -1,8 +1,8 @@
 #!/bin/python
 # This is a Quick & Dirty assembler :P
-
+"This is a Quick & Dirty assembler :P"
 import os
-import io
+#import io
 import binascii
 from mausembler.custom_errors import DuplicateLabelError
 from mausembler.custom_errors import FileNonExistantError
@@ -41,6 +41,8 @@ class Assembler():
         self.data = ''
         self.sparser = Sparser()
         self.tobe_written_data = []
+        self.conditioned_data = []
+        
         print "Mausembler; self-titled!\n"
 
     def determine_dependencies(self, data):
@@ -98,7 +100,7 @@ class Assembler():
             # ^ commenting this line out while testing
             cont = 'yes'
             if cont.lower() in ['yes', 'y']:
-                self.output_file = io.open(output_filename, 'wb')
+                self.output_file = open(output_filename, 'wb')
             else:
                 print 'Exiting...'
                 raise FileExistsError(self.output_filename)
@@ -107,13 +109,12 @@ class Assembler():
             FH.write('')
             FH.close()
             del FH
-            self.output_file = io.open(output_filename, 'wb')
+            self.output_file = open(output_filename, 'wb')
         self.determine_dependencies(self.data)
         print "\nFinding labels..."
 
         # these next couple of lines will conditions the data to
         # prepare it for parsing
-        self.conditioned_data = []
         for self.line_number in range(len(self.data)):
             opcode = self.data[self.line_number]
             opcode = opcode.rstrip()
@@ -137,10 +138,9 @@ class Assembler():
         print '\n'
         print "I'm just about to write all this shit to file :)\n\n"
         for line in self.tobe_written_data:
-            print 'line:',line
-            if line != '':
-                bytes = binascii.a2b_hex(line)
-                self.output_file.write(bytes)
+            print 'line:', line
+            if line != '' and line != ():
+                self.output_file.write(binascii.a2b_hex(line))
         self.output_file.close()
 
         #self.output_file.close()
@@ -154,16 +154,20 @@ class Assembler():
                 if label_name not in self.labels:
                     print '* remember line', str(self.line_number), 'as label "' + label_name + '"'
                     if label_name in self.labels:
-                        raise DuplicateLabelError([label_name, input_filename,
-                                                   self.labels, self.line_number])
+                        raise DuplicateLabelError([label_name,
+                                                   self.input_filename,
+                                                   self.labels,
+                                                   self.line_number])
                     self.labels[label_name.upper()] = self.line_number
             elif opcode[0][-1] == ':':
                 label_name = opcode[0][:-1]
                 if label_name not in self.labels:
                     print '* remember line', str(self.line_number), 'as label "' + label_name + '"'
                     if label_name in self.labels:
-                        raise DuplicateLabelError([label_name, input_filename,
-                                                   self.labels, self.line_number])
+                        raise DuplicateLabelError([label_name,
+                                                   self.input_filename,
+                                                   self.labels,
+                                                   self.line_number])
                     self.labels[label_name.upper()] = self.line_number
         else:
             print '* doing nothing for this line'
@@ -171,6 +175,6 @@ class Assembler():
     def parse(self, opcode, input_filename):
         if opcode != []:
             opcode[0] = opcode[0].upper()
-            self.tobe_written_data.append( self.sparser.parse(self, opcode) )
+            self.tobe_written_data.append(self.sparser.parse(self, opcode))
         else:
             print '* do nothing for this line'

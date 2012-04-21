@@ -18,6 +18,7 @@ class Sparser():
             if opcode[2].upper() in boss.ops: value_proper = boss.ops[opcode[2]]
             elif opcode[2].upper() in boss.labels: value_proper = 'PASS'
             elif opcode[2].upper() in boss.registers: value_proper = boss.registers[opcode[2]]
+            elif '[' in opcode[2] and opcode[2] not in boss.registers: print "You're pretty much screwed"; value_proper='PASS'
             else:
                 try:
                     print '    * not working:',;
@@ -35,8 +36,12 @@ class Sparser():
                 #print 'value_proper:', str(value_proper),
                 print'\n'
                 if len(value_proper) != 4:
-                    print 'value_proper:', str(value_proper)
-                    value_proper = (value_proper.split('x')[1]).rjust(4, '0')
+                    try:
+                        value_proper = int(value_proper)
+                    except ValueError: pass
+                    if type(value_proper) != int:
+                        print 'value_proper:', str(value_proper), type(value_proper)
+                        value_proper = (value_proper.split('x')[1]).rjust(4, '0')
             output_data = ['0x1f', (boss.registers[opcode[1].upper()]),
                                 (boss.ops[opcode[0].upper()]), (value_proper)]
 
