@@ -9,6 +9,7 @@ from mausembler.custom_errors import FileNonExistantError
 from mausembler.custom_errors import FileExistsError
 from mausembler.sparser import Sparser
 
+NON = 'hello'
 
 class Assembler():
     "Does the assembling stuff :D"
@@ -82,13 +83,13 @@ class Assembler():
         if os.path.exists(os.getcwd() + '\\' + input_filename):
             input_filename = os.getcwd() + '\\' + input_filename
         while not os.path.exists(input_filename):
-            for X in range(len(self.dep_path)):
-                possibles = [(self.dep_path[X] + '\\' + cur_input_filename),
-                             (self.dep_path[X] + '\\' + \
+            for num in range(len(self.dep_path)):
+                possibles = [(self.dep_path[num] + '\\' + cur_input_filename),
+                             (self.dep_path[num] + '\\' + \
                               cur_input_filename.split('\\')[-1]),
-                             (os.getcwd() + '\\' + self.dep_path[X] + '\\' + \
+                             (os.getcwd() + '\\' + self.dep_path[num] + '\\' + \
                               cur_input_filename),
-                             (os.getcwd() + '\\' + self.dep_path[X] + '\\' + \
+                             (os.getcwd() + '\\' + self.dep_path[num] + '\\' + \
                               cur_input_filename.split('\\')[-1])]
                 for poss in possibles:
 #                    print os.path.exists(poss)
@@ -100,9 +101,9 @@ class Assembler():
                 raise FileNonExistantError(input_filename)
         print
         if os.path.exists(cur_input_filename):
-            FH = open(input_filename, 'rb')
-            self.data = FH.readlines()
-            FH.close()
+            file_handle = open(input_filename, 'rb')
+            self.data = file_handle.readlines()
+            file_handle.close()
         if os.path.exists(output_filename):
             #cont = raw_input('Output file exists. Overwrite? ')
             # ^ commenting this line out while testing
@@ -113,10 +114,10 @@ class Assembler():
                 print 'Exiting...'
                 raise FileExistsError(self.output_filename)
         else:
-            FH = open(output_filename, 'w')
-            FH.write('')
-            FH.close()
-            del FH
+            file_handle = open(output_filename, 'w')
+            file_handle.write('')
+            file_handle.close()
+            del file_handle
             self.output_file = open(output_filename, 'wb')
         self.determine_dependencies(self.data)
         print "\nFinding labels..."
@@ -140,23 +141,23 @@ class Assembler():
 
         # this is the second loop; it'll do the actual assembling
         for opcode in self.conditioned_data:
-            str(self.parse(opcode, input_filename))
+            str(self.parse(opcode))
         print '\nDependencies:', str(self.dependencies)
         print 'Labels:', [label for label in self.labels]
         print '\n'
         print "I'm just about to write all this shit to file :)\n\n"
         for line in self.tobe_written_data:
             print 'line:', line
-            if line != '' and line != ():
+            if line != '' and line != () and line != []:
                 self.output_file.write(binascii.a2b_hex(line))
         self.output_file.close()
 
         #self.output_file.close()
 
     def find_labels(self, opcode):
+        "Find labels in the input file"
         if opcode != []:
             opcode[0] = opcode[0].upper()
-            processed = 0
             if opcode[0][0] == ':':
                 label_name = opcode[0][1:]
                 if label_name not in self.labels:
@@ -182,7 +183,7 @@ class Assembler():
         else:
             print '* doing nothing for this line'
 
-    def parse(self, opcode, input_filename):
+    def parse(self, opcode):
         "Does minimal processing, calls the parser"
         if opcode != []:
             opcode[0] = opcode[0].upper()

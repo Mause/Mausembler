@@ -1,11 +1,20 @@
 "Parsing code for the Mausembler"
 
 class Sparser():
+    "Parsing code for the Mausembler"
     def __init__(self, ):
         print 'Sparser; self-titled!'
 
-    def parse(self, boss, opcode):
+    def print_credits(self):
+        "Prints credits!"
+        print 'First, notch! Cheers matey!'
+        print 'Secondly, startling! For answering my questions!'
+        print 'Thirdly, for PyLint,',
+        print 'for forcing me to add another function to this class!'
+        print 'And fourthly, me. For writing the code'
 
+    def parse(self, boss, opcode):
+        "Does the actual pasring and assembling"
 
         #  hex( (0x1f << 10) ^ (0x0 << 4) ^ 0x1 )
         #  sample code as supplied by startling
@@ -15,16 +24,22 @@ class Sparser():
         output_data = []
         print '* '+str([x for x in opcode])
         if opcode[0] == 'SET':
-            print "Line number:", boss.line_number#, '\nopcode:', opcode, '\ndata:', str(opcode[1])
+            print "Line number:", boss.line_number
+            #, '\nopcode:', opcode, '\ndata:', str(opcode[1])
             print '* set memory location', opcode[1], 'to', opcode[2]
-            if opcode[2].upper() in boss.ops: value_proper = boss.ops[opcode[2]]
-            elif opcode[2].upper() in boss.labels: value_proper = 'PASS'
-            elif opcode[2].upper() in boss.registers: value_proper = boss.registers[opcode[2]]
-            elif '[' in opcode[2] and opcode[2] not in boss.registers: print "You're pretty much screwed"; value_proper='PASS'
+            if opcode[2].upper() in boss.ops:
+                value_proper = boss.ops[opcode[2]]
+            elif opcode[2].upper() in boss.labels:
+                value_proper = 'PASS'
+            elif opcode[2].upper() in boss.registers:
+                value_proper = boss.registers[opcode[2]]
+            elif '[' in opcode[2] and opcode[2] not in boss.registers:
+                print "You're pretty much screwed"
+                value_proper = 'PASS'
             else:
                 try:
-                    print '    * not working:',;
-                    print opcode[2], ':', boss.ops[opcode[2].upper()];
+                    print '    * not working:',
+                    print opcode[2], ':', boss.ops[opcode[2].upper()]
                 except KeyError:
                     print '\n    * definately not in there'
                 value_proper = opcode[2]
@@ -32,7 +47,7 @@ class Sparser():
                 print "    * boss's labels:", boss.labels
                 if value_proper[0:2] != '0x':
                     try:
-                        value_proper = hex(value_proper)
+                        value_proper = hex(int(value_proper)).split('x')[1]
                         print '    * now in hex'
                     except TypeError:
                         print '    * already in hex'
@@ -40,13 +55,15 @@ class Sparser():
                     value_proper = value_proper.split('x')[1]
                 #print 'value_proper:', str(value_proper),
 
-                if len(value_proper) != 4:
+                if len(value_proper) != 4 and value_proper[0:2] == '0x':
                     print '    * not long enough! justifying!'
                     try:
                         value_proper = int(value_proper)
-                    except ValueError: pass
+                    except ValueError:
+                        pass
                     if type(value_proper) != int:
-                        print 'value_proper:', str(value_proper), type(value_proper)
+                        print 'value_proper:',
+                        print str(value_proper), type(value_proper)
                         value_proper = (value_proper).rjust(4, '0')
                 if len(str(value_proper)) != 4:
                     print '    * last justification didnt work! trying again!'
@@ -56,13 +73,20 @@ class Sparser():
             output_data = [0x1f, (boss.registers[opcode[1].upper()]),
                                 (boss.ops[opcode[0].upper()]), (value_proper)]
 
+#            if output_data[2][0:2] == '0x':
+ #               print '    * its still got the damn "0x" bit!'
+  #              output_data[2] = .split('x')[1]
+            output_data[0] = (output_data[0] << 10)
+            output_data[1] = (output_data[1] << 4)
+            final = hex(output_data[0] ^ output_data[1] ^ output_data[2])
+            data_word.append(final)
+            data_word[-1] = data_word[-1].split('x')[1]
+            data_word.append(str(output_data[3]))
 
-            data_word.append(hex( (output_data[0] << 10) ^ (output_data[1] << 4) ^ output_data[2] ).split('x')[1])
-            data_word.append(output_data[3])
+            print 'data_word:', data_word
+            data_word = ''.join(data_word)
 
-            data_word=''.join(data_word)
-
-            output_data.append(data_word)
+            
             print '\n'
             del value_proper
 
