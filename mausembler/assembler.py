@@ -128,7 +128,7 @@ class Assembler():
         # this is the first loop; it'll find stuff like labels and shit
         for opcode in self.conditioned_data:
             self.find_labels(opcode)
-        print '\nThe cpu will be told to;'
+        print '\nFor', self.input_filename, 'the cpu will be told to;'
 
         # this is the second loop; it'll do the actual assembling
         for opcode in self.conditioned_data:

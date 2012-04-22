@@ -1,14 +1,16 @@
-#def s_ident(self, scanner, token): return token
-#def s_operator(self, scanner, token): return "op%s" % token
-#def s_float(self, scanner, token): return float(token)
-#def s_int(self, scanner, token): return int(token)
-
+"Parsing code for the Mausembler"
 
 class Sparser():
     def __init__(self, ):
         print 'Sparser; self-titled!'
 
     def parse(self, boss, opcode):
+
+
+        #  hex( (0x1f << 10) ^ (0x0 << 4) ^ 0x1 )
+        #  sample code as supplied by startling
+
+
         data_word = ()
         output_data = []
         print '* '+str([x for x in opcode])
@@ -31,26 +33,36 @@ class Sparser():
                 if value_proper[0:2] != '0x':
                     try:
                         value_proper = hex(value_proper)
+                        print '    * now in hex'
                     except TypeError:
                         print '    * already in hex'
+                else:
+                    value_proper = value_proper.split('x')[1]
                 #print 'value_proper:', str(value_proper),
-                print'\n'
+
                 if len(value_proper) != 4:
+                    print '    * not long enough! justifying!'
                     try:
                         value_proper = int(value_proper)
                     except ValueError: pass
                     if type(value_proper) != int:
                         print 'value_proper:', str(value_proper), type(value_proper)
-                        value_proper = (value_proper.split('x')[1]).rjust(4, '0')
+                        value_proper = (value_proper).rjust(4, '0')
+                if len(str(value_proper)) != 4:
+                    print '    * last justification didnt work! trying again!'
+                    value_proper = str(value_proper).rjust(4, '0')
+
+
             output_data = ['0x1f', (boss.registers[opcode[1].upper()]),
                                 (boss.ops[opcode[0].upper()]), (value_proper)]
 
-            data_word = (str(output_data[0].split('x')[1])+
+            data_word = (str(output_data[2])+
                          str(output_data[1])+
-                         str(output_data[2])+
+                         str(output_data[0].split('x')[1])+
                          str(output_data[3]))
 
             output_data.append(data_word)
+            print '\n'
             del value_proper
 
 #        elif opcode[0] == 'ADD':
