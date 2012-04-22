@@ -11,6 +11,7 @@ from mausembler.sparser import Sparser
 
 
 class Assembler():
+    "Does the assembling stuff :D"
     def __init__(self):
         self.ops = {'SET': 0x1, 'ADD': 0x2, 'SUB': 0x3, 'MUL': 0x4,
                   'DIV': 0x5, 'MOD': 0x6, 'SHL': 0x7, 'SHR': 0x8,
@@ -33,6 +34,8 @@ class Assembler():
                           'O': 0x1d, '[PC++]': 0x1e,
                           'PC++': 0x1f}
         self.input_filename = ''
+        self.input_file = None
+        self.output_file = None
         self.output_filename = ''
         self.dependencies = []
         self.dep_path = []
@@ -42,10 +45,13 @@ class Assembler():
         self.sparser = Sparser()
         self.tobe_written_data = []
         self.conditioned_data = []
-        
+        self.line_number = 0
+
         print "Mausembler; self-titled!\n"
 
     def determine_dependencies(self, data):
+        """Simply loops through each line in the file,
+        and determines which files the file depends on"""
         print "Determining dependencies..."
         if data not in self.data_done:
             self.data_done.append(data)
@@ -61,6 +67,8 @@ class Assembler():
 #self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
 
     def load(self, input_filename='null.txt', output_filename='null.bin'):
+        """Does in depth checking for input file,
+        loads said input file, prepares output file, etc"""
         print 'Input file:', str(input_filename)
         print 'Output file:', str(output_filename)
         print
@@ -74,13 +82,13 @@ class Assembler():
         if os.path.exists(os.getcwd() + '\\' + input_filename):
             input_filename = os.getcwd() + '\\' + input_filename
         while not os.path.exists(input_filename):
-            for x in range(len(self.dep_path)):
-                possibles = [(self.dep_path[x] + '\\' + cur_input_filename),
-                             (self.dep_path[x] + '\\' + \
+            for X in range(len(self.dep_path)):
+                possibles = [(self.dep_path[X] + '\\' + cur_input_filename),
+                             (self.dep_path[X] + '\\' + \
                               cur_input_filename.split('\\')[-1]),
-                             (os.getcwd() + '\\' + self.dep_path[x] + '\\' + \
+                             (os.getcwd() + '\\' + self.dep_path[X] + '\\' + \
                               cur_input_filename),
-                             (os.getcwd() + '\\' + self.dep_path[x] + '\\' + \
+                             (os.getcwd() + '\\' + self.dep_path[X] + '\\' + \
                               cur_input_filename.split('\\')[-1])]
                 for poss in possibles:
 #                    print os.path.exists(poss)
@@ -152,7 +160,8 @@ class Assembler():
             if opcode[0][0] == ':':
                 label_name = opcode[0][1:]
                 if label_name not in self.labels:
-                    print '* remember line', str(self.line_number), 'as label "' + label_name + '"'
+                    print '* remember line', str(self.line_number),
+                    print 'as label "' + label_name + '"'
                     if label_name in self.labels:
                         raise DuplicateLabelError([label_name,
                                                    self.input_filename,
@@ -162,7 +171,8 @@ class Assembler():
             elif opcode[0][-1] == ':':
                 label_name = opcode[0][:-1]
                 if label_name not in self.labels:
-                    print '* remember line', str(self.line_number), 'as label "' + label_name + '"'
+                    print '* remember line', str(self.line_number),
+                    print 'as label "' + label_name + '"'
                     if label_name in self.labels:
                         raise DuplicateLabelError([label_name,
                                                    self.input_filename,
@@ -173,6 +183,7 @@ class Assembler():
             print '* doing nothing for this line'
 
     def parse(self, opcode, input_filename):
+        "Does minimal processing, calls the parser"
         if opcode != []:
             opcode[0] = opcode[0].upper()
             self.tobe_written_data.append(self.sparser.parse(self, opcode))

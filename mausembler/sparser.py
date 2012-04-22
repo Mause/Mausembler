@@ -11,7 +11,7 @@ class Sparser():
         #  sample code as supplied by startling
 
 
-        data_word = ()
+        data_word = []
         output_data = []
         print '* '+str([x for x in opcode])
         if opcode[0] == 'SET':
@@ -53,13 +53,14 @@ class Sparser():
                     value_proper = str(value_proper).rjust(4, '0')
 
 
-            output_data = ['0x1f', (boss.registers[opcode[1].upper()]),
+            output_data = [0x1f, (boss.registers[opcode[1].upper()]),
                                 (boss.ops[opcode[0].upper()]), (value_proper)]
 
-            data_word = (str(output_data[2])+
-                         str(output_data[1])+
-                         str(output_data[0].split('x')[1])+
-                         str(output_data[3]))
+
+            data_word.append(hex( (output_data[0] << 10) ^ (output_data[1] << 4) ^ output_data[2] ).split('x')[1])
+            data_word.append(output_data[3])
+
+            data_word=''.join(data_word)
 
             output_data.append(data_word)
             print '\n'
