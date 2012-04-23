@@ -4,6 +4,7 @@
 import os
 import sys
 import binascii
+import logging
 try:
     from mausembler.custom_errors import DuplicateLabelError
     from mausembler.custom_errors import FileNonExistantError
@@ -49,23 +50,55 @@ class Assembler():
         self.tobe_written_data = []
         self.conditioned_data = []
         self.line_number = 0
+        self.log_file = ''
+        # set the instance.debug_toggle
+        # switch for debug info
+        self.debug_toggle = False
         print "Mausembler; self-titled!\n"
+
+    def debug(self, data):
+        "Simply debug function"
+        if data[0] == 'p':
+            data = '* ' + data[1:]
+        elif data[0] == 's':
+            data = '    * ' + data[1:]
+        self.log_file.info(data)
+        if self.debug_toggle == True:
+            print data
 
     def load(self, input_filename='null.txt', output_filename='null.bin'):
         """Does in depth checking for input file,
-        loads said input file, prepares output file, etc"""
+        loads said input file, prepares output file,
+        sets up log file"""
+
+        # first off, (very important)
+        # we have to setup a log file!
+        self.log_file = logging.getLogger('Mausembler')
+        hdlr = logging.FileHandler('Mausembler.log')
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        hdlr.setFormatter(formatter)
+        self.log_file.addHandler(hdlr)
+        self.log_file.setLevel(logging.INFO)
+        self.log_file.info('##########################################')
+        self.log_file.info('Mausembler! Self-titled!')
+        self.log_file.info('##########################################')
+
         print 'Input file:', str(input_filename)
+        self.log_file.info('Input file: ' + str(input_filename))
+        self.input_filename = input_filename
         print 'Output file:', str(output_filename)
-        print
+        self.log_file.info('Output file: '+str(output_filename))
+        self.output_filename = output_filename
         #self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
         abspath = os.path.abspath(input_filename)
         self.dep_path.append('\\'.join(abspath.split('\\')[:-1]))
         del abspath
-        print 'self.dep_path:', str(self.dep_path)
+        self.debug('pself.dep_path: '+str(self.dep_path))
         cur_input_filename = input_filename
 
         if os.path.exists(os.getcwd() + '\\' + input_filename):
             input_filename = os.getcwd() + '\\' + input_filename
+
         for num in range(len(self.dep_path)):
             possibles = [(self.dep_path[num] + '\\' + cur_input_filename),
                          (self.dep_path[num] + '\\' + \
@@ -75,12 +108,13 @@ class Assembler():
                          (os.getcwd() + '\\' + self.dep_path[num]\
                           + '\\' + cur_input_filename.split('\\')[-1])]
             for poss in possibles:
-#                    print os.path.exists(poss)
+                self.debug('s'+poss+' '+str(os.path.exists(poss)))
                 if os.path.exists(poss):
                     input_filename = poss
                     break
         if not os.path.exists(input_filename):
             print 'are you sure that the specified file exists?\n\n'
+            self.log_file.info('are you sure that the specified file exists?')
             raise FileNonExistantError(input_filename)
         print
         if os.path.exists(cur_input_filename):
@@ -103,7 +137,7 @@ class Assembler():
             del file_handle
             self.output_file = open(output_filename, 'wb')
         self.do_dependencies(self.data)
-        print "\nFinding labels..."
+        self.debug("pFinding labels...")
 
         # these next couple of lines will condition the data to
         # prepare it for parsing
@@ -123,27 +157,38 @@ class Assembler():
         # this is the first loop; it'll find stuff like labels and shit
         for opcode in self.conditioned_data:
             self.find_labels(opcode)
-        print '\nFor', self.input_filename, 'the cpu will be told to;'
+        if self.input_filename == '':
+            self.debug('pOkay. The input_filename variable is empty. NOT HELPFUL')
+            self.debug('pthe cpu will be told to')
+        else:
+            self.debug('pfor "'+self.input_filename+'" the cpu will be told to;')
 
         # this is the second loop; it'll do the actual assembling
         for opcode in self.conditioned_data:
             str(self.go_parse(opcode))
-        print '\nDependencies:', str(self.dependencies)
-        print 'Labels:', [label for label in self.labels]
-        print '\n'
-        print "I'm just about to write all this shit to file :)\n\n"
+        if len(self.dependencies) != 0:
+            self.debug('pDependencies: '+str(self.dependencies))
+        else:
+            self.debug('pThe input file was not found to depend on any external code bases')
+        if len(self.labels) != 0:
+            self.debug('pLabels: '+str([label for label in self.labels]))
+        else:
+            self.debug('pNo labels were found in the input file')
+        self.debug('pAbout to write output data to "'+output_filename+'"')
         for line in self.tobe_written_data:
-            print 'line:', line
             if line != '' and line != () and line != []:
+                self.debug('pline: '+line)
                 self.output_file.write(binascii.a2b_hex(line))
         self.output_file.close()
+        print 'Done'
+        self.log_file.info('Done')
 
         #self.output_file.close()
 
     def do_dependencies(self, data):
         """Simply loops through each line in the file,
         and determines which files the file depends on"""
-        print "Determining dependencies..."
+        self.debug("pDetermining dependencies...")
         if data not in self.data_done:
             self.data_done.append(data)
         else:
@@ -154,11 +199,10 @@ class Assembler():
                     self.dependencies.append(
                         ((''.join(line.split()[1:])).strip('"')).strip("'"))
 
-        print 'deps', self.dep_path
+        self.debug('pdeps '+str(self.dep_path))
 
         for dep in self.dependencies:
             for num in range(len(self.dep_path)):
-                print 'going...'
                 possibles = [(self.dep_path[num] + '\\' + dep),
                              (self.dep_path[num] + '\\' + \
                               dep.split('\\')[-1]),
@@ -167,7 +211,7 @@ class Assembler():
                              (os.getcwd() + '\\' + self.dep_path[num]\
                               + '\\' + dep.split('\\')[-1])]
                 for poss in possibles:
-                    print os.path.exists(poss)
+                    self.debug('p'+poss+' '+os.path.exists(poss))
                     if os.path.exists(poss):
                         dep = poss
                         break
@@ -176,7 +220,7 @@ class Assembler():
                 self.data.append(line)
             dep_handler.close()
 
-
+# old reference code :P
 #self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
 
     def find_labels(self, opcode):
@@ -186,8 +230,7 @@ class Assembler():
             if opcode[0][0] == ':':
                 label_name = opcode[0][1:]
                 if label_name not in self.labels:
-                    print '* remember line', str(self.line_number),
-                    print 'as label "' + label_name + '"'
+                    self.debug('premember line '+str(self.line_number)+' as label "' + label_name + '"')
                     if label_name in self.labels:
                         raise DuplicateLabelError([label_name,
                                                    self.input_filename,
@@ -197,8 +240,7 @@ class Assembler():
             elif opcode[0][-1] == ':':
                 label_name = opcode[0][:-1]
                 if label_name not in self.labels:
-                    print '* remember line', str(self.line_number),
-                    print 'as label "' + label_name + '"'
+                    self.debug('premember line '+str(self.line_number) + ' as label "' + label_name + '"')
                     if label_name in self.labels:
                         raise DuplicateLabelError([label_name,
                                                    self.input_filename,
@@ -206,7 +248,7 @@ class Assembler():
                                                    self.line_number])
                     self.labels[label_name.upper()] = self.line_number
         else:
-            print '* doing nothing for this line'
+            self.debug('pdoing nothing for this line')
 
     def go_parse(self, opcode):
         "Does minimal processing, calls the parser"
@@ -214,7 +256,7 @@ class Assembler():
             opcode[0] = opcode[0].upper()
             self.tobe_written_data.append(self.parse(opcode))
         else:
-            print '* do nothing for this line'
+            self.debug('pdo nothing for this line')
 
     def parse(self, opcode):
         "Does the actual parsing and assembling"
@@ -225,14 +267,14 @@ class Assembler():
 
         data_word = []
         output_data = []
-        print '* ' + str([x for x in opcode])
+        self.debug('pOpcode: '+str([x for x in opcode]))
         if opcode[0] == 'SET':
-            print "Line number:", self.line_number
+            self.debug("pLine number: "+str(self.line_number))
             #, '\nopcode:', opcode, '\ndata:', str(opcode[1])
-            print '* set memory location', opcode[1], 'to', opcode[2]
+            self.debug('pset memory location '+opcode[1]+ ' to '+opcode[2])
             value_proper = None
             if '$' in opcode[2].upper():
-                print '    * SirCmpwn; damn you sir!'
+                self.debug('sSirCmpwn; damn you sir!')
             elif opcode[2].upper() in self.ops:
                 value_proper = self.ops[opcode[2]]
             elif opcode[2].upper() in self.labels:
@@ -240,51 +282,48 @@ class Assembler():
             elif opcode[2].upper() in self.registers:
                 value_proper = self.registers[opcode[2].upper()]
             elif '[' in opcode[2] and opcode[2] not in self.registers:
-                print "    * you're pretty much screwed (opcode[2])"
+                self.debug("syou're pretty much screwed (opcode[2])")
                 value_proper = 'PASS'
             elif '[' in opcode[1] and opcode[1] not in self.registers:
-                print "    * you're pretty much screwed (opcode[1])"
+                self.debug("syou're pretty much screwed (opcode[1])")
                 opcode[1] = 'P'
             else:
                 try:
-                    print '    * not working:',
-                    print opcode[2], ':', self.ops[opcode[2].upper()]
+                    self.debug('snot working: ' + opcode[2] + ' : ' + self.ops[opcode[2].upper()])
                 except KeyError:
-                    print '\n    * definately not in there'
+                    self.debug('sdefinately not in there')
                 value_proper = opcode[2]
-                print '    * value_proper:', str(value_proper)
-                print "    * labels:", self.labels
+                self.debug('svalue_proper: ' + str(value_proper))
+                self.debug("slabels: " + str([label for label in self.labels]))
                 if value_proper[0:2] != '0x':
                     try:
                         value_proper = hex(int(value_proper)).split('x')[1]
-                        print '    * now in hex'
+                        self.debug('snow in hex')
                     except TypeError:
-                        print '    * already in hex'
+                        self.debug('salready in hex')
                 else:
                     value_proper = value_proper.split('x')[1]
-                #print 'value_proper:', str(value_proper),
 
                 if len(str(value_proper)) != 4:# and value_proper[0:2] == '0x':
-                    print '    * not long enough! justifying!'
+                    self.debug('snot long enough! justifying!')
                     try:
                         value_proper = int(value_proper)
                     except ValueError:
                         pass
                     if type(value_proper) != int:
-                        print 'value_proper:',
-                        print str(value_proper), type(value_proper)
+                        self.debug('svalue_proper: '+str(value_proper)+str(type(value_proper)))
                     value_proper = str(value_proper).rjust(4, '0')
                 else:
-                    print '    * ok, value_proper is long enough'
+                    self.debug('sok, value_proper is long enough')
 #                if len(str(value_proper)) != 4:
- #                   print '    * last justification didnt work! trying again!'
+ #                   self.debug('slast justification didnt work! trying again!')
   #                  value_proper = str(value_proper).rjust(4, '0')
 
             output_data = [0x1f, (self.registers[opcode[1].upper()]),
                                 (self.ops[opcode[0].upper()]), (value_proper)]
 
 #            if output_data[2][0:2] == '0x':
- #               print '    * its still got the damn "0x" bit!'
+ #               self.debug('sits still got the damn "0x" bit!')
   #              output_data[2] = .split('x')[1]
             output_data[0] = (output_data[0] << 10)
             output_data[1] = (output_data[1] << 4)
@@ -293,23 +332,22 @@ class Assembler():
             data_word[-1] = data_word[-1].split('x')[1]
             data_word.append(str(output_data[3]))
 
-            print 'data_word:', data_word
+            self.debug('pdata_word: '+str(data_word))
             data_word = ''.join(data_word)
 
-            print '\n'
             del value_proper
 
 #        elif opcode[0] == 'ADD':
- #           print '* set', opcode[1], 'to', opcode[1], '+', opcode[2]
+ #           self.debug('pset', opcode[1], 'to', opcode[1], '+', opcode[2])
   #          self.output_file.write(str(self.ops[opcode[0]]))
    #     elif opcode[0] == 'SUB':
-    #        print '* set', opcode[1], 'to', opcode[1], '-', opcode[2]
+    #        self.debug('pset', opcode[1], 'to', opcode[1], '-', opcode[2])
      #       self.output_file.write(str(self.ops[opcode[0]]))
       #  elif opcode[0] == 'MUL':
-       #     print '* set', opcode[1], 'to', opcode[1], '*', opcode[2]
+       #     self.debug('pset', opcode[1], 'to', opcode[1], '*', opcode[2])
         #    self.output_file.write(str(self.ops[opcode[0]]))
 #        elif opcode[0] == 'DIV':
- #           print '* set', opcode[1], 'to', opcode[1], '/', opcode[2]
+ #           self.debug('pset', opcode[1], 'to', opcode[1], '/', opcode[2])
   #          self.output_file.write(str(self.ops[opcode[0]]))
    #     elif opcode[0] == 'MOD':
     #        print '* set', opcode[1], 'to', opcode[1], '%', opcode[2]
