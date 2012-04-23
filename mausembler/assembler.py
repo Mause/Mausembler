@@ -12,7 +12,6 @@ except ImportError:
     from custom_errors import DuplicateLabelError
     from custom_errors import FileNonExistantError
     from custom_errors import FileExistsError
-#from mausembler.sparser import Sparser
 
 
 class Assembler():
@@ -198,27 +197,33 @@ class Assembler():
             print '* do nothing for this line'
 
     def parse(self, opcode):
-        "Does the actual pasring and assembling"
+        "Does the actual parsing and assembling"
 
         #  hex( (0x1f << 10) ^ (0x0 << 4) ^ 0x1 )
         #  sample code as supplied by startling
 
         data_word = []
         output_data = []
-        print '* '+str([x for x in opcode])
+        print '* ' + str([x for x in opcode])
         if opcode[0] == 'SET':
             print "Line number:", self.line_number
             #, '\nopcode:', opcode, '\ndata:', str(opcode[1])
             print '* set memory location', opcode[1], 'to', opcode[2]
-            if opcode[2].upper() in self.ops:
+            value_proper = None
+            if '$' in opcode[2].upper():
+                print '    * SirCmpwn; damn you sir!'
+            elif opcode[2].upper() in self.ops:
                 value_proper = self.ops[opcode[2]]
             elif opcode[2].upper() in self.labels:
                 value_proper = 'PASS'
             elif opcode[2].upper() in self.registers:
-                value_proper = self.registers[opcode[2]]
+                value_proper = self.registers[opcode[2].upper()]
             elif '[' in opcode[2] and opcode[2] not in self.registers:
-                print "You're pretty much screwed"
+                print "    * you're pretty much screwed (opcode[2])"
                 value_proper = 'PASS'
+            elif '[' in opcode[1] and opcode[1] not in self.registers:
+                print "    * you're pretty much screwed (opcode[1])"
+                opcode[1] = 'P'
             else:
                 try:
                     print '    * not working:',
@@ -227,7 +232,7 @@ class Assembler():
                     print '\n    * definately not in there'
                 value_proper = opcode[2]
                 print '    * value_proper:', str(value_proper)
-                print "    * self's labels:", self.labels
+                print "    * labels:", self.labels
                 if value_proper[0:2] != '0x':
                     try:
                         value_proper = hex(int(value_proper)).split('x')[1]
@@ -247,11 +252,10 @@ class Assembler():
                     if type(value_proper) != int:
                         print 'value_proper:',
                         print str(value_proper), type(value_proper)
-                        value_proper = (value_proper).rjust(4, '0')
-                if len(str(value_proper)) != 4:
-                    print '    * last justification didnt work! trying again!'
                     value_proper = str(value_proper).rjust(4, '0')
-
+#                if len(str(value_proper)) != 4:
+ #                   print '    * last justification didnt work! trying again!'
+  #                  value_proper = str(value_proper).rjust(4, '0')
 
             output_data = [0x1f, (self.registers[opcode[1].upper()]),
                                 (self.ops[opcode[0].upper()]), (value_proper)]
@@ -269,7 +273,6 @@ class Assembler():
             print 'data_word:', data_word
             data_word = ''.join(data_word)
 
-            
             print '\n'
             del value_proper
 
@@ -299,11 +302,10 @@ class Assembler():
         print 'And thirdly, me. For writing the code'
 
 if __name__ == '__main__':
-    inst = Assembler()
-    inst.print_credits()
-    if len(sys.argv) >=2:
+    INST = Assembler()
+    INST.print_credits()
+    if len(sys.argv) >= 2:
         if sys.argv[1] in ['--help', '-h', '/?']:
             print '\nHeya! Looking for help? Look in the README.md file!'
         elif sys.argv[1] not in ['', None] and sys.argv[2] not in ['', None]:
-            inst.load(sys.argv[1], sys.argv[2])
-
+            INST.load(sys.argv[1], sys.argv[2])
