@@ -9,7 +9,6 @@ from mausembler.custom_errors import FileNonExistantError
 from mausembler.custom_errors import FileExistsError
 from mausembler.sparser import Sparser
 
-NON = 'hello'
 
 class Assembler():
     "Does the assembling stuff :D"
@@ -87,10 +86,10 @@ class Assembler():
                 possibles = [(self.dep_path[num] + '\\' + cur_input_filename),
                              (self.dep_path[num] + '\\' + \
                               cur_input_filename.split('\\')[-1]),
-                             (os.getcwd() + '\\' + self.dep_path[num] + '\\' + \
-                              cur_input_filename),
-                             (os.getcwd() + '\\' + self.dep_path[num] + '\\' + \
-                              cur_input_filename.split('\\')[-1])]
+                             (os.getcwd() + '\\' + self.dep_path[num]\
+                              + '\\' + cur_input_filename),
+                             (os.getcwd() + '\\' + self.dep_path[num]\
+                              + '\\' + cur_input_filename.split('\\')[-1])]
                 for poss in possibles:
 #                    print os.path.exists(poss)
                     if os.path.exists(poss):
