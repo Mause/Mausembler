@@ -2,12 +2,17 @@
 # This is a Quick & Dirty assembler :P
 "This is a Quick & Dirty assembler :P"
 import os
-#import io
+import sys
 import binascii
-from mausembler.custom_errors import DuplicateLabelError
-from mausembler.custom_errors import FileNonExistantError
-from mausembler.custom_errors import FileExistsError
-from mausembler.sparser import Sparser
+try:
+    from mausembler.custom_errors import DuplicateLabelError
+    from mausembler.custom_errors import FileNonExistantError
+    from mausembler.custom_errors import FileExistsError
+except ImportError:
+    from custom_errors import DuplicateLabelError
+    from custom_errors import FileNonExistantError
+    from custom_errors import FileExistsError
+#from mausembler.sparser import Sparser
 
 
 class Assembler():
@@ -42,7 +47,6 @@ class Assembler():
         self.labels = {}
         self.data_done = []
         self.data = ''
-        self.sparser = Sparser()
         self.tobe_written_data = []
         self.conditioned_data = []
         self.line_number = 0
@@ -121,7 +125,7 @@ class Assembler():
         self.determine_dependencies(self.data)
         print "\nFinding labels..."
 
-        # these next couple of lines will conditions the data to
+        # these next couple of lines will condition the data to
         # prepare it for parsing
         for self.line_number in range(len(self.data)):
             opcode = self.data[self.line_number]
@@ -129,6 +133,9 @@ class Assembler():
             opcode = opcode.replace(',', ' ')
             # for now the tokeniser assumes that there
             # are no strings that contain semicolons
+            # looking at regex to correct this
+            # but i dont think even that will be fool
+            # proof
             opcode = opcode.split(';')[0]
             opcode = opcode.split()
             self.conditioned_data.append(opcode)
@@ -140,7 +147,7 @@ class Assembler():
 
         # this is the second loop; it'll do the actual assembling
         for opcode in self.conditioned_data:
-            str(self.parse(opcode))
+            str(self.go_parse(opcode))
         print '\nDependencies:', str(self.dependencies)
         print 'Labels:', [label for label in self.labels]
         print '\n'
@@ -182,10 +189,121 @@ class Assembler():
         else:
             print '* doing nothing for this line'
 
-    def parse(self, opcode):
+    def go_parse(self, opcode):
         "Does minimal processing, calls the parser"
         if opcode != []:
             opcode[0] = opcode[0].upper()
-            self.tobe_written_data.append(self.sparser.parse(self, opcode))
+            self.tobe_written_data.append(self.parse(opcode))
         else:
             print '* do nothing for this line'
+
+    def parse(self, opcode):
+        "Does the actual pasring and assembling"
+
+        #  hex( (0x1f << 10) ^ (0x0 << 4) ^ 0x1 )
+        #  sample code as supplied by startling
+
+        data_word = []
+        output_data = []
+        print '* '+str([x for x in opcode])
+        if opcode[0] == 'SET':
+            print "Line number:", self.line_number
+            #, '\nopcode:', opcode, '\ndata:', str(opcode[1])
+            print '* set memory location', opcode[1], 'to', opcode[2]
+            if opcode[2].upper() in self.ops:
+                value_proper = self.ops[opcode[2]]
+            elif opcode[2].upper() in self.labels:
+                value_proper = 'PASS'
+            elif opcode[2].upper() in self.registers:
+                value_proper = self.registers[opcode[2]]
+            elif '[' in opcode[2] and opcode[2] not in self.registers:
+                print "You're pretty much screwed"
+                value_proper = 'PASS'
+            else:
+                try:
+                    print '    * not working:',
+                    print opcode[2], ':', self.ops[opcode[2].upper()]
+                except KeyError:
+                    print '\n    * definately not in there'
+                value_proper = opcode[2]
+                print '    * value_proper:', str(value_proper)
+                print "    * self's labels:", self.labels
+                if value_proper[0:2] != '0x':
+                    try:
+                        value_proper = hex(int(value_proper)).split('x')[1]
+                        print '    * now in hex'
+                    except TypeError:
+                        print '    * already in hex'
+                else:
+                    value_proper = value_proper.split('x')[1]
+                #print 'value_proper:', str(value_proper),
+
+                if len(value_proper) != 4 and value_proper[0:2] == '0x':
+                    print '    * not long enough! justifying!'
+                    try:
+                        value_proper = int(value_proper)
+                    except ValueError:
+                        pass
+                    if type(value_proper) != int:
+                        print 'value_proper:',
+                        print str(value_proper), type(value_proper)
+                        value_proper = (value_proper).rjust(4, '0')
+                if len(str(value_proper)) != 4:
+                    print '    * last justification didnt work! trying again!'
+                    value_proper = str(value_proper).rjust(4, '0')
+
+
+            output_data = [0x1f, (self.registers[opcode[1].upper()]),
+                                (self.ops[opcode[0].upper()]), (value_proper)]
+
+#            if output_data[2][0:2] == '0x':
+ #               print '    * its still got the damn "0x" bit!'
+  #              output_data[2] = .split('x')[1]
+            output_data[0] = (output_data[0] << 10)
+            output_data[1] = (output_data[1] << 4)
+            final = hex(output_data[0] ^ output_data[1] ^ output_data[2])
+            data_word.append(final)
+            data_word[-1] = data_word[-1].split('x')[1]
+            data_word.append(str(output_data[3]))
+
+            print 'data_word:', data_word
+            data_word = ''.join(data_word)
+
+            
+            print '\n'
+            del value_proper
+
+#        elif opcode[0] == 'ADD':
+ #           print '* set', opcode[1], 'to', opcode[1], '+', opcode[2]
+  #          self.output_file.write(str(self.ops[opcode[0]]))
+   #     elif opcode[0] == 'SUB':
+    #        print '* set', opcode[1], 'to', opcode[1], '-', opcode[2]
+     #       self.output_file.write(str(self.ops[opcode[0]]))
+      #  elif opcode[0] == 'MUL':
+       #     print '* set', opcode[1], 'to', opcode[1], '*', opcode[2]
+        #    self.output_file.write(str(self.ops[opcode[0]]))
+#        elif opcode[0] == 'DIV':
+ #           print '* set', opcode[1], 'to', opcode[1], '/', opcode[2]
+  #          self.output_file.write(str(self.ops[opcode[0]]))
+   #     elif opcode[0] == 'MOD':
+    #        print '* set', opcode[1], 'to', opcode[1], '%', opcode[2]
+     #       self.output_file.write(str(self.ops[opcode[0]]))
+
+        #return output_data
+        return data_word
+
+    def print_credits(self):
+        "Prints credits!"
+        print 'First, notch! Cheers matey!'
+        print 'Secondly, startling! For answering my questions!'
+        print 'And thirdly, me. For writing the code'
+
+if __name__ == '__main__':
+    inst = Assembler()
+    inst.print_credits()
+    if len(sys.argv) >=2:
+        if sys.argv[1] in ['--help', '-h', '/?']:
+            print '\nHeya! Looking for help? Look in the README.md file!'
+        elif sys.argv[1] not in ['', None] and sys.argv[2] not in ['', None]:
+            inst.load(sys.argv[1], sys.argv[2])
+
