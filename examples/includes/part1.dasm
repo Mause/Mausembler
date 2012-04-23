@@ -1,0 +1,4 @@
+.include part2.dasm
+
+
+set a, 30

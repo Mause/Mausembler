@@ -49,25 +49,7 @@ class Assembler():
         self.tobe_written_data = []
         self.conditioned_data = []
         self.line_number = 0
-
         print "Mausembler; self-titled!\n"
-
-    def determine_dependencies(self, data):
-        """Simply loops through each line in the file,
-        and determines which files the file depends on"""
-        print "Determining dependencies..."
-        if data not in self.data_done:
-            self.data_done.append(data)
-        else:
-            return
-        for line in data:
-            if line[0] == '.':
-                if line.split()[0] == '.include':
-                    self.dependencies.append(
-                        ((''.join(line.split()[1:])).strip('"')).strip("'"))
-        for dep in self.dependencies:
-            self.load(dep, ''.join(dep.split('.')[:-1]) + 'bin')
-#self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
 
     def load(self, input_filename='null.txt', output_filename='null.bin'):
         """Does in depth checking for input file,
@@ -84,23 +66,22 @@ class Assembler():
 
         if os.path.exists(os.getcwd() + '\\' + input_filename):
             input_filename = os.getcwd() + '\\' + input_filename
-        while not os.path.exists(input_filename):
-            for num in range(len(self.dep_path)):
-                possibles = [(self.dep_path[num] + '\\' + cur_input_filename),
-                             (self.dep_path[num] + '\\' + \
-                              cur_input_filename.split('\\')[-1]),
-                             (os.getcwd() + '\\' + self.dep_path[num]\
-                              + '\\' + cur_input_filename),
-                             (os.getcwd() + '\\' + self.dep_path[num]\
-                              + '\\' + cur_input_filename.split('\\')[-1])]
-                for poss in possibles:
+        for num in range(len(self.dep_path)):
+            possibles = [(self.dep_path[num] + '\\' + cur_input_filename),
+                         (self.dep_path[num] + '\\' + \
+                          cur_input_filename.split('\\')[-1]),
+                         (os.getcwd() + '\\' + self.dep_path[num]\
+                          + '\\' + cur_input_filename),
+                         (os.getcwd() + '\\' + self.dep_path[num]\
+                          + '\\' + cur_input_filename.split('\\')[-1])]
+            for poss in possibles:
 #                    print os.path.exists(poss)
-                    if os.path.exists(poss):
-                        input_filename = poss
-                        break
-            if not os.path.exists(input_filename):
-                print 'are you sure that the specified file exists?\n\n'
-                raise FileNonExistantError(input_filename)
+                if os.path.exists(poss):
+                    input_filename = poss
+                    break
+        if not os.path.exists(input_filename):
+            print 'are you sure that the specified file exists?\n\n'
+            raise FileNonExistantError(input_filename)
         print
         if os.path.exists(cur_input_filename):
             file_handle = open(input_filename, 'rb')
@@ -121,7 +102,7 @@ class Assembler():
             file_handle.close()
             del file_handle
             self.output_file = open(output_filename, 'wb')
-        self.determine_dependencies(self.data)
+        self.do_dependencies(self.data)
         print "\nFinding labels..."
 
         # these next couple of lines will condition the data to
@@ -158,6 +139,45 @@ class Assembler():
         self.output_file.close()
 
         #self.output_file.close()
+
+    def do_dependencies(self, data):
+        """Simply loops through each line in the file,
+        and determines which files the file depends on"""
+        print "Determining dependencies..."
+        if data not in self.data_done:
+            self.data_done.append(data)
+        else:
+            return
+        for line in data:
+            if line[0] == '.':
+                if line.split()[0] == '.include':
+                    self.dependencies.append(
+                        ((''.join(line.split()[1:])).strip('"')).strip("'"))
+
+        print 'deps', self.dep_path
+
+        for dep in self.dependencies:
+            for num in range(len(self.dep_path)):
+                print 'going...'
+                possibles = [(self.dep_path[num] + '\\' + dep),
+                             (self.dep_path[num] + '\\' + \
+                              dep.split('\\')[-1]),
+                             (os.getcwd() + '\\' + self.dep_path[num]\
+                              + '\\' + dep),
+                             (os.getcwd() + '\\' + self.dep_path[num]\
+                              + '\\' + dep.split('\\')[-1])]
+                for poss in possibles:
+                    print os.path.exists(poss)
+                    if os.path.exists(poss):
+                        dep = poss
+                        break
+            dep_handler = open(dep, 'rb')
+            for line in dep_handler.readlines():
+                self.data.append(line)
+            dep_handler.close()
+
+
+#self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
 
     def find_labels(self, opcode):
         "Find labels in the input file"
@@ -199,8 +219,9 @@ class Assembler():
     def parse(self, opcode):
         "Does the actual parsing and assembling"
 
-        #  hex( (0x1f << 10) ^ (0x0 << 4) ^ 0x1 )
-        #  sample code as supplied by startling
+        # hex( (0x1f << 10) ^ (0x0 << 4) ^ 0x1 )
+        # returns 0x7c01
+        # sample code as supplied by startling
 
         data_word = []
         output_data = []
@@ -243,7 +264,7 @@ class Assembler():
                     value_proper = value_proper.split('x')[1]
                 #print 'value_proper:', str(value_proper),
 
-                if len(value_proper) != 4 and value_proper[0:2] == '0x':
+                if len(str(value_proper)) != 4:# and value_proper[0:2] == '0x':
                     print '    * not long enough! justifying!'
                     try:
                         value_proper = int(value_proper)
@@ -253,6 +274,8 @@ class Assembler():
                         print 'value_proper:',
                         print str(value_proper), type(value_proper)
                     value_proper = str(value_proper).rjust(4, '0')
+                else:
+                    print '    * ok, value_proper is long enough'
 #                if len(str(value_proper)) != 4:
  #                   print '    * last justification didnt work! trying again!'
   #                  value_proper = str(value_proper).rjust(4, '0')
