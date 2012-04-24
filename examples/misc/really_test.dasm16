@@ -1,0 +1,7 @@
+set a, 0x30
+set b, 0x20
+set c, 0x10
+
+set a, 30
+set b, 20
+set c, 10

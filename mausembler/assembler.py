@@ -175,12 +175,25 @@ class Assembler():
         else:
             self.debug('pNo labels were found in the input file')
         self.debug('pAbout to write output data to "'+output_filename+'"')
+        errors = 0
+        total_lines = 0
         for line in self.tobe_written_data:
             if line != '' and line != () and line != []:
                 self.debug('pline: '+line)
-                self.output_file.write(binascii.a2b_hex(line))
+                total_lines += 1
+                try:
+                    self.output_file.write(binascii.a2b_hex(line))
+                except TypeError:
+                    print 'Odd-length string:', str(line)
+                    self.log_file.info('Odd-length string: '+str(line))
+                    errors += 1
         self.output_file.close()
-        print 'Done'
+        if errors != 0:
+            print 
+            print str(errors), 'out of', str(total_lines) ,'parseable lines threw errors'
+            self.log_file.info(str(errors) + ' out of '\
+                               + str(total_lines)+' parseable lines threw errors')
+        print '\nDone\n'
         self.log_file.info('Done')
 
         #self.output_file.close()
@@ -211,7 +224,7 @@ class Assembler():
                              (os.getcwd() + '\\' + self.dep_path[num]\
                               + '\\' + dep.split('\\')[-1])]
                 for poss in possibles:
-                    self.debug('p'+poss+' '+os.path.exists(poss))
+                    self.debug('p'+poss+' '+str(os.path.exists(poss)))
                     if os.path.exists(poss):
                         dep = poss
                         break
