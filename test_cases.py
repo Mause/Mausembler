@@ -1,17 +1,27 @@
 #!/bin/python
 from mausembler import Assembler
+import os
 
 options = {'stdlib_ilog': ('examples\\misc\\ilog.dasm',
                            'examples\\misc\\ilog.bin'),
          'simple_dependecy-test': ('examples\\includes\\part1.dasm',
-                                   'examples\\includes\\part1+part2.bin')}
+                                   'examples\\includes\\part1+part2.bin'),
+           "SirCmpwn's_test_case": ('examples\\misc\\.orgASM_test.dasm',
+                           'examples\\misc\\.orgASM_test.bin')}
 
 inst = Assembler()
 
 print 'This performs a number of test cases on the assembler :D'
-print "If you'll give me a moment, ill clean up the .bin files from previous tests :)\n"
+print "If you'll give me a moment, ill clean up the .bin files from previous tests :)\n\n"
 
-print '0. All tests'
+for test in range(len(options)):
+    cmd = ('del '+options[options.keys()[test]][1])
+    print cmd
+    os.system(cmd)
+
+
+
+print '\n\n0. All tests'
 for test in range(len(options)):
     print str(test+1)+'.', options.keys()[test].replace('_', ' ')
 
@@ -34,7 +44,12 @@ if test_num != 0:
     output_filename = options[options.keys()[test_num-1]][1]
     inst.load(input_filename, output_filename)
 else:
-    print 'Tobe implemented'
+    for test_num in possibles[1:]:
+        test_num = int(test_num)
+        input_filename = options[options.keys()[test_num-1]][0]
+        output_filename = options[options.keys()[test_num-1]][1]
+        inst.load(input_filename, output_filename)
+
 
 
 print 'Test done'
