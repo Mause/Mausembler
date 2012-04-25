@@ -22,10 +22,20 @@ class Assembler():
                     'MUL': 0x04, 'MLI': 0x05, 'DIV': 0x06,
                     'DVI': 0x07, 'MOD': 0x08, 'AND': 0x09,
                     'BOR': 0x0a, 'XOR': 0x0b, 'SHR': 0x0c,
-                    'ASR': 0x0d, 'SHL': 0x0e, 'IFB': 0x10,
+                    'ASR': 0x0d, 'SHL': 0x0e, 'STI': 0x0f,
+                    'IFB': 0x10,
                     'IFC': 0x11, 'IFE': 0x12, 'IFN': 0x13,
                     'IFG': 0x14, 'IFA': 0x15, 'IFL': 0x16,
-                    'IFU': 0x17}  # 'DAT':0x}
+                    'IFU': 0x17,
+                    'ADX': 0x1a, 'SBX': 0x1b}  # 'DAT':0x}
+        self.spec_ops = {'JSR': 0x01,
+                         'HCF': 0x07,
+                         'INT': 0x08,
+                         'IAG': 0x09,
+                         'IAS': 0x0a,
+                         'HWN': 0x10,
+                         'HQN': 0x11,
+                         'HWI': 0x12}
         self.registers = {'A': 0x00, 'B': 0x01,
                           'C': 0x02, 'X': 0x03,
                           'Y': 0x04, 'Z': 0x05,
