@@ -1,8 +1,12 @@
 #!/bin/python
+"""
+This script lets the user run a number of test cases against the assembler
+"""
+
 from mausembler import Assembler
 import os
 
-options = {'stdlib_ilog': ('examples\\misc\\ilog.dasm',
+OPTIONS = {'stdlib_ilog': ('examples\\misc\\ilog.dasm',
                            'examples\\misc\\ilog.bin'),
          'simple_dependecy-test': ('examples\\includes\\part1.dasm',
                                    'examples\\includes\\part1+part2.bin'),
@@ -12,47 +16,47 @@ options = {'stdlib_ilog': ('examples\\misc\\ilog.dasm',
                            'examples\\math\\addition.bin')}
 
 
-inst = Assembler()
-inst.debug_toggle = True
+INST = Assembler()
+INST.debug_toggle = True
 print 'This performs a number of test cases on the assembler :D'
-print "If you'll give me a moment, ill clean up the .bin files from previous tests :)\n\n"
+print "If you'll give me a moment, \
+i'll clean up the .bin files from previous tests :)\n\n"
 
-for test in range(len(options)):
-    cmd = ('del '+options[options.keys()[test]][1])
+for test in range(len(OPTIONS)):
+    cmd = ('del ' + OPTIONS[OPTIONS.keys()[test]][1])
     print cmd
     os.system(cmd)
 
 
-
 print '\n\n0. All tests'
-for test in range(len(options)):
-    print str(test+1)+'.', options.keys()[test].replace('_', ' ')
+for test in range(len(OPTIONS)):
+    print str(test + 1) + '.',
+    print OPTIONS.keys()[test].replace('_', ' ')
 
-print #range(len(options)+1)
-test_num = raw_input('Please enter a number: ')
-possibles = [str(x) for x in range(len(options)+1)]
-while test_num not in possibles:
-    test_num = raw_input('Please enter a number: ')
-    if test_num not in possibles:
+print  # range(len(OPTIONS)+1)
+TEST_NUM = raw_input('Please enter a number: ')
+POSSIBLES = [str(x) for x in range(len(OPTIONS) + 1)]
+while TEST_NUM not in POSSIBLES:
+    TEST_NUM = raw_input('Please enter a number: ')
+    if TEST_NUM not in POSSIBLES:
         print 'Sorry, please try again\n'
 
-test_num = int(test_num)
+TEST_NUM = int(TEST_NUM)
 
-print 
+print
 
-#print options[options.keys()[test_num-1]]#[0], options[options.keys()[test_num]][1])
+#print OPTIONS[OPTIONS.keys()[TEST_NUM-1]]#[0],\
+#OPTIONS[OPTIONS.keys()[TEST_NUM]][1])
 
-if test_num != 0:
-    input_filename = options[options.keys()[test_num-1]][0]
-    output_filename = options[options.keys()[test_num-1]][1]
-    inst.load(input_filename, output_filename)
+if TEST_NUM != 0:
+    INPUT_FILENAME = OPTIONS[OPTIONS.keys()[TEST_NUM - 1]][0]
+    OUTPUT_FILENAME = OPTIONS[OPTIONS.keys()[TEST_NUM - 1]][1]
+    INST.load(INPUT_FILENAME, OUTPUT_FILENAME)
 else:
-    for test_num in possibles[1:]:
-        test_num = int(test_num)
-        input_filename = options[options.keys()[test_num-1]][0]
-        output_filename = options[options.keys()[test_num-1]][1]
-        inst.load(input_filename, output_filename)
-
-
+    for TEST_NUM in POSSIBLES[1:]:
+        TEST_NUM = int(TEST_NUM)
+        INPUT_FILENAME = OPTIONS[OPTIONS.keys()[TEST_NUM - 1]][0]
+        OUTPUT_FILENAME = OPTIONS[OPTIONS.keys()[TEST_NUM - 1]][1]
+        INST.load(INPUT_FILENAME, OUTPUT_FILENAME)
 
 print 'Test done'
