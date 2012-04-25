@@ -1,0 +1,8 @@
+set a, 1
+set b, 5
+set c, 10
+add x, a
+add x, b
+add x, c
+
+div x, 3

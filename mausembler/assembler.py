@@ -292,7 +292,7 @@ to depend on any external code bases')
         data_word = []
         output_data = []
         self.debug('pOpcode: ' + str([x for x in opcode]))
-        if opcode[0] in ['SET', 'ADD']:
+        if opcode[0] in ['SET', 'ADD', 'DIV', 'MUL']:
             self.debug("pLine number: " + str(self.line_number))
             #, '\nopcode:', opcode, '\ndata:', str(opcode[1])
             self.debug('pset memory location ' + opcode[1] + ' to '\
@@ -358,8 +358,6 @@ to depend on any external code bases')
             data_word = ''.join(data_word)
 
             del value_proper
-
-
 
 #        elif opcode[0] == 'ADD':
  #           self.debug('pset', opcode[1], 'to', opcode[1], '+', opcode[2])

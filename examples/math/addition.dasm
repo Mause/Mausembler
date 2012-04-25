@@ -1,0 +1,5 @@
+set a, 5
+set c, 5
+add c, 5
+set b, 4
+add b, a

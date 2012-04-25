@@ -13,7 +13,9 @@ OPTIONS = {'stdlib_ilog': ('examples\\misc\\ilog.dasm',
            "SirCmpwn's_test_case": ('examples\\misc\\.orgASM_test.dasm',
                            'examples\\misc\\.orgASM_test.bin'),
            "addition_test_case": ('examples\\math\\addition.dasm',
-                           'examples\\math\\addition.bin')}
+                           'examples\\math\\addition.bin'),
+           "math_test_case": ('examples\\math\\basic_commands.dasm',
+                           'examples\\math\\basic_commands.bin')}
 
 
 INST = Assembler()
