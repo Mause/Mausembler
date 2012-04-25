@@ -18,10 +18,14 @@ except ImportError:
 class Assembler():
     "Does the assembling stuff :D"
     def __init__(self):
-        self.ops = {'SET': 0x1, 'ADD': 0x2, 'SUB': 0x3, 'MUL': 0x4,
-                  'DIV': 0x5, 'MOD': 0x6, 'SHL': 0x7, 'SHR': 0x8,
-                  'AND': 0x9, 'BOR': 0xa, 'XOR': 0xb, 'IFE': 0xc,
-                  'IFN': 0xd, 'IFG': 0xe, 'IVB': 0xf}  # 'DAT':0x}
+        self.ops = {'SET': 0x01, 'ADD': 0x02, 'SUB': 0x03,
+                    'MUL': 0x04, 'MLI': 0x05, 'DIV': 0x06,
+                    'DVI': 0x07, 'MOD': 0x08, 'AND': 0x09,
+                    'BOR': 0x0a, 'XOR': 0x0b, 'SHR': 0x0c,
+                    'ASR': 0x0d, 'SHL': 0x0e, 'IFB': 0x10,
+                    'IFC': 0x11, 'IFE': 0x12, 'IFN': 0x13,
+                    'IFG': 0x14, 'IFA': 0x15, 'IFL': 0x16,
+                    'IFU': 0x17}  # 'DAT':0x}
         self.registers = {'A': 0x00, 'B': 0x01,
                           'C': 0x02, 'X': 0x03,
                           'Y': 0x04, 'Z': 0x05,
@@ -87,13 +91,13 @@ class Assembler():
         self.log_file.info('Input file: ' + str(input_filename))
         self.input_filename = input_filename
         print 'Output file:', str(output_filename)
-        self.log_file.info('Output file: '+str(output_filename))
+        self.log_file.info('Output file: ' + str(output_filename))
         self.output_filename = output_filename
         #self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
         abspath = os.path.abspath(input_filename)
         self.dep_path.append('\\'.join(abspath.split('\\')[:-1]))
         del abspath
-        self.debug('pself.dep_path: '+str(self.dep_path))
+        self.debug('pself.dep_path: ' + str(self.dep_path))
         cur_input_filename = input_filename
 
         if os.path.exists(os.getcwd() + '\\' + input_filename):
@@ -108,7 +112,7 @@ class Assembler():
                          (os.getcwd() + '\\' + self.dep_path[num]\
                           + '\\' + cur_input_filename.split('\\')[-1])]
             for poss in possibles:
-                self.debug('s'+poss+' '+str(os.path.exists(poss)))
+                self.debug('s' + poss + ' ' + str(os.path.exists(poss)))
                 if os.path.exists(poss):
                     input_filename = poss
                     break
@@ -158,41 +162,46 @@ class Assembler():
         for opcode in self.conditioned_data:
             self.find_labels(opcode)
         if self.input_filename == '':
-            self.debug('pOkay. The input_filename variable is empty. NOT HELPFUL')
+            self.debug('pOkay. \
+            The input_filename variable is empty. NOT HELPFUL')
             self.debug('pthe cpu will be told to')
         else:
-            self.debug('pfor "'+self.input_filename+'" the cpu will be told to;')
+            self.debug('pfor "' + self.input_filename\
+                       + '" the cpu will be told to;')
 
         # this is the second loop; it'll do the actual assembling
         for opcode in self.conditioned_data:
             str(self.go_parse(opcode))
         if len(self.dependencies) != 0:
-            self.debug('pDependencies: '+str(self.dependencies))
+            self.debug('pDependencies: ' + str(self.dependencies))
         else:
-            self.debug('pThe input file was not found to depend on any external code bases')
+            self.debug('pThe input file was not found \
+to depend on any external code bases')
         if len(self.labels) != 0:
-            self.debug('pLabels: '+str([label for label in self.labels]))
+            self.debug('pLabels: ' + str([label for label in self.labels]))
         else:
             self.debug('pNo labels were found in the input file')
-        self.debug('pAbout to write output data to "'+output_filename+'"')
+        self.debug('pAbout to write output data to "' + output_filename + '"')
         errors = 0
         total_lines = 0
         for line in self.tobe_written_data:
             if line != '' and line != () and line != []:
-                self.debug('pline: '+line)
+                self.debug('pline: ' + line)
                 total_lines += 1
                 try:
                     self.output_file.write(binascii.a2b_hex(line))
                 except TypeError:
                     print 'Odd-length string:', str(line)
-                    self.log_file.info('Odd-length string: '+str(line))
+                    self.log_file.info('Odd-length string: ' + str(line))
                     errors += 1
         self.output_file.close()
         if errors != 0:
-            print 
-            print str(errors), 'out of', str(total_lines) ,'parseable lines threw errors'
+            print
+            print str(errors), 'out of', str(total_lines),\
+                  'parseable lines threw errors'
             self.log_file.info(str(errors) + ' out of '\
-                               + str(total_lines)+' parseable lines threw errors')
+                               + str(total_lines) +\
+                               ' parseable lines threw errors')
         print '\nDone\n'
         self.log_file.info('Done')
 
@@ -212,7 +221,7 @@ class Assembler():
                     self.dependencies.append(
                         ((''.join(line.split()[1:])).strip('"')).strip("'"))
 
-        self.debug('pdeps '+str(self.dep_path))
+        self.debug('pdeps ' + str(self.dep_path))
 
         for dep in self.dependencies:
             for num in range(len(self.dep_path)):
@@ -224,7 +233,7 @@ class Assembler():
                              (os.getcwd() + '\\' + self.dep_path[num]\
                               + '\\' + dep.split('\\')[-1])]
                 for poss in possibles:
-                    self.debug('p'+poss+' '+str(os.path.exists(poss)))
+                    self.debug('p' + poss + ' ' + str(os.path.exists(poss)))
                     if os.path.exists(poss):
                         dep = poss
                         break
@@ -243,7 +252,8 @@ class Assembler():
             if opcode[0][0] == ':':
                 label_name = opcode[0][1:]
                 if label_name not in self.labels:
-                    self.debug('premember line '+str(self.line_number)+' as label "' + label_name + '"')
+                    self.debug('premember line ' + str(self.line_number) +\
+                               ' as label "' + label_name + '"')
                     if label_name in self.labels:
                         raise DuplicateLabelError([label_name,
                                                    self.input_filename,
@@ -253,7 +263,8 @@ class Assembler():
             elif opcode[0][-1] == ':':
                 label_name = opcode[0][:-1]
                 if label_name not in self.labels:
-                    self.debug('premember line '+str(self.line_number) + ' as label "' + label_name + '"')
+                    self.debug('premember line ' + str(self.line_number)\
+                               + ' as label "' + label_name + '"')
                     if label_name in self.labels:
                         raise DuplicateLabelError([label_name,
                                                    self.input_filename,
@@ -280,11 +291,12 @@ class Assembler():
 
         data_word = []
         output_data = []
-        self.debug('pOpcode: '+str([x for x in opcode]))
-        if opcode[0] == 'SET':
-            self.debug("pLine number: "+str(self.line_number))
+        self.debug('pOpcode: ' + str([x for x in opcode]))
+        if opcode[0] in ['SET', 'ADD']:
+            self.debug("pLine number: " + str(self.line_number))
             #, '\nopcode:', opcode, '\ndata:', str(opcode[1])
-            self.debug('pset memory location '+opcode[1]+ ' to '+opcode[2])
+            self.debug('pset memory location ' + opcode[1] + ' to '\
+                       + opcode[2])
             value_proper = None
             if '$' in opcode[2].upper():
                 self.debug('sSirCmpwn; damn you sir!')
@@ -302,7 +314,8 @@ class Assembler():
                 opcode[1] = 'P'
             else:
                 try:
-                    self.debug('snot working: ' + opcode[2] + ' : ' + self.ops[opcode[2].upper()])
+                    self.debug('snot working: ' + opcode[2] + ' : ' +\
+                               self.ops[opcode[2].upper()])
                 except KeyError:
                     self.debug('sdefinately not in there')
                 value_proper = opcode[2]
@@ -317,27 +330,23 @@ class Assembler():
                 else:
                     value_proper = value_proper.split('x')[1]
 
-                if len(str(value_proper)) != 4:# and value_proper[0:2] == '0x':
+                # and value_proper[0:2] == '0x':
+                if len(str(value_proper)) != 4:
                     self.debug('snot long enough! justifying!')
                     try:
                         value_proper = int(value_proper)
                     except ValueError:
                         pass
                     if type(value_proper) != int:
-                        self.debug('svalue_proper: '+str(value_proper)+str(type(value_proper)))
+                        self.debug('svalue_proper: ' + str(value_proper) + \
+                                   str(type(value_proper)))
                     value_proper = str(value_proper).rjust(4, '0')
                 else:
                     self.debug('sok, value_proper is long enough')
-#                if len(str(value_proper)) != 4:
- #                   self.debug('slast justification didnt work! trying again!')
-  #                  value_proper = str(value_proper).rjust(4, '0')
 
             output_data = [0x1f, (self.registers[opcode[1].upper()]),
                                 (self.ops[opcode[0].upper()]), (value_proper)]
 
-#            if output_data[2][0:2] == '0x':
- #               self.debug('sits still got the damn "0x" bit!')
-  #              output_data[2] = .split('x')[1]
             output_data[0] = (output_data[0] << 10)
             output_data[1] = (output_data[1] << 4)
             final = hex(output_data[0] ^ output_data[1] ^ output_data[2])
@@ -345,10 +354,12 @@ class Assembler():
             data_word[-1] = data_word[-1].split('x')[1]
             data_word.append(str(output_data[3]))
 
-            self.debug('pdata_word: '+str(data_word))
+            self.debug('pdata_word: ' + str(data_word))
             data_word = ''.join(data_word)
 
             del value_proper
+
+
 
 #        elif opcode[0] == 'ADD':
  #           self.debug('pset', opcode[1], 'to', opcode[1], '+', opcode[2])

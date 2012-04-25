@@ -7,10 +7,13 @@ options = {'stdlib_ilog': ('examples\\misc\\ilog.dasm',
          'simple_dependecy-test': ('examples\\includes\\part1.dasm',
                                    'examples\\includes\\part1+part2.bin'),
            "SirCmpwn's_test_case": ('examples\\misc\\.orgASM_test.dasm',
-                           'examples\\misc\\.orgASM_test.bin')}
+                           'examples\\misc\\.orgASM_test.bin'),
+           "addition_test_case": ('examples\\math\\addition.dasm',
+                           'examples\\math\\addition.bin')}
+
 
 inst = Assembler()
-
+inst.debug_toggle = True
 print 'This performs a number of test cases on the assembler :D'
 print "If you'll give me a moment, ill clean up the .bin files from previous tests :)\n\n"
 
