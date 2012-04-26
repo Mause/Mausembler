@@ -6,34 +6,46 @@ This script lets the user run a number of test cases against the assembler
 from mausembler import Assembler
 import os
 
-OPTIONS = {'stdlib_ilog': ('examples\\misc\\ilog.dasm',
-                           'examples\\misc\\ilog.bin'),
-         'simple_dependecy-test': ('examples\\includes\\part1.dasm',
-                                   'examples\\includes\\part1+part2.bin'),
-           "SirCmpwn's_test_case": ('examples\\misc\\.orgASM_test.dasm',
-                           'examples\\misc\\.orgASM_test.bin'),
-           "addition_test_case": ('examples\\math\\addition.dasm',
-                           'examples\\math\\addition.bin'),
-           "math_test_case": ('examples\\math\\basic_commands.dasm',
-                           'examples\\math\\basic_commands.bin')}
+OPTIONS = {'stdlib_ilog': [['examples', 'misc', 'ilog.dasm'],
+                           ['examples', 'misc', 'ilog.bin']],
+
+           'simple_dependecy-test': [['examples',
+                                      'includes',
+                                      'part1.dasm'],
+                                     ['examples',
+                                      'includes',
+                                      'part1+part2.bin']],
+           "SirCmpwn's_test_case": [['examples', 'misc', '.orgASM_test.dasm'],
+                           ['examples', 'misc', '.orgASM_test.bin']],
+           "addition_test_case": [['examples', 'math', 'addition.dasm'],
+                           ['examples', 'math', 'addition.bin']],
+           "math_test_case": [['examples', 'math', 'basic_commands.dasm'],
+                           ['examples', 'math', 'basic_commands.bin']]}
+
+#for test in range(len(OPTIONS)):
+for test in OPTIONS.keys():
+    OPTIONS[test][0] = str(os.sep).join(OPTIONS[test][0])
+    OPTIONS[test][1] = str(os.sep).join(OPTIONS[test][1])
 
 
 INST = Assembler()
-INST.debug_toggle = True
+#INST.debug_toggle = True #  debugging line. enable to know ALL the stuffs :D
 print 'This performs a number of test cases on the assembler :D'
 print "If you'll give me a moment, \
-i'll clean up the .bin files from previous tests :)\n\n"
+i'll clean up the .bin files from previous tests :)\n"
 
-for test in range(len(OPTIONS)):
-    cmd = ('del ' + OPTIONS[OPTIONS.keys()[test]][1])
-    print cmd
-    os.system(cmd)
+for test in OPTIONS.keys():
+    try:
+        os.remove(os.getcwd() + os.sep + OPTIONS[test][1])
+    except WindowsError:
+        pass  # ok, that file doesnt exist
 
-
+TEST_NUM = 0
 print '\n\n0. All tests'
-for test in range(len(OPTIONS)):
-    print str(test + 1) + '.',
-    print OPTIONS.keys()[test].replace('_', ' ')
+for test in OPTIONS.keys():
+    TEST_NUM += 0
+    print str(TEST_NUM) + '.',
+    print test.replace('_', ' ')
 
 print  # range(len(OPTIONS)+1)
 TEST_NUM = raw_input('Please enter a number: ')

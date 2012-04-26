@@ -15,7 +15,7 @@ except ImportError:
     from custom_errors import FileExistsError
 
 
-class Assembler():
+class Assembler:
     "Does the assembling stuff :D"
     def __init__(self):
         self.ops = {'SET': 0x01, 'ADD': 0x02, 'SUB': 0x03,
@@ -105,22 +105,22 @@ class Assembler():
         self.output_filename = output_filename
         #self.dep_path.append('\\'.join(input_filename.split('\\')[:-1]))
         abspath = os.path.abspath(input_filename)
-        self.dep_path.append('\\'.join(abspath.split('\\')[:-1]))
+        self.dep_path.append(os.sep.join(abspath.split(os.sep)[:-1]))
         del abspath
         self.debug('pself.dep_path: ' + str(self.dep_path))
         cur_input_filename = input_filename
 
-        if os.path.exists(os.getcwd() + '\\' + input_filename):
-            input_filename = os.getcwd() + '\\' + input_filename
+        if os.path.exists(os.getcwd() + os.sep + input_filename):
+            input_filename = os.getcwd() + os.sep + input_filename
 
         for num in range(len(self.dep_path)):
-            possibles = [(self.dep_path[num] + '\\' + cur_input_filename),
-                         (self.dep_path[num] + '\\' + \
-                          cur_input_filename.split('\\')[-1]),
-                         (os.getcwd() + '\\' + self.dep_path[num]\
-                          + '\\' + cur_input_filename),
-                         (os.getcwd() + '\\' + self.dep_path[num]\
-                          + '\\' + cur_input_filename.split('\\')[-1])]
+            possibles = [(self.dep_path[num] + os.sep + cur_input_filename),
+                         (self.dep_path[num] + os.sep +
+                          cur_input_filename.split(os.sep)[-1]),
+                         (os.getcwd() + os.sep + self.dep_path[num]
+                          + os.sep + cur_input_filename),
+                         (os.getcwd() + os.sep + self.dep_path[num]
+                          + os.sep + cur_input_filename.split(os.sep)[-1])]
             for poss in possibles:
                 self.debug('s' + poss + ' ' + str(os.path.exists(poss)))
                 if os.path.exists(poss):
@@ -172,11 +172,11 @@ class Assembler():
         for opcode in self.conditioned_data:
             self.find_labels(opcode)
         if self.input_filename == '':
-            self.debug('pOkay. \
-            The input_filename variable is empty. NOT HELPFUL')
+            self.debug(
+                'pOkay. The input_filename variable is empty. NOT HELPFUL')
             self.debug('pthe cpu will be told to')
         else:
-            self.debug('pfor "' + self.input_filename\
+            self.debug('pfor "' + self.input_filename
                        + '" the cpu will be told to;')
 
         # this is the second loop; it'll do the actual assembling
@@ -185,8 +185,8 @@ class Assembler():
         if len(self.dependencies) != 0:
             self.debug('pDependencies: ' + str(self.dependencies))
         else:
-            self.debug('pThe input file was not found \
-to depend on any external code bases')
+            self.debug('''pThe input file was not found
+to depend on any external code bases''')
         if len(self.labels) != 0:
             self.debug('pLabels: ' + str([label for label in self.labels]))
         else:
@@ -207,10 +207,10 @@ to depend on any external code bases')
         self.output_file.close()
         if errors != 0:
             print
-            print str(errors), 'out of', str(total_lines),\
-                  'parseable lines threw errors'
-            self.log_file.info(str(errors) + ' out of '\
-                               + str(total_lines) +\
+            print (str(errors), 'out of', str(total_lines),
+                   'parseable lines threw errors')
+            self.log_file.info(str(errors) + ' out of '
+                               + str(total_lines) +
                                ' parseable lines threw errors')
         print '\nDone\n'
         self.log_file.info('Done')
@@ -229,19 +229,20 @@ to depend on any external code bases')
             if line[0] == '.':
                 if line.split()[0] == '.include':
                     self.dependencies.append(
-                        ((''.join(line.split()[1:])).strip('"')).strip("'"))
+                        ''.join(ch for ch in (line.split()[1:])
+                                if ch not in "\"'<>"))
 
         self.debug('pdeps ' + str(self.dep_path))
 
         for dep in self.dependencies:
             for num in range(len(self.dep_path)):
-                possibles = [(self.dep_path[num] + '\\' + dep),
-                             (self.dep_path[num] + '\\' + \
-                              dep.split('\\')[-1]),
-                             (os.getcwd() + '\\' + self.dep_path[num]\
-                              + '\\' + dep),
-                             (os.getcwd() + '\\' + self.dep_path[num]\
-                              + '\\' + dep.split('\\')[-1])]
+                possibles = [(self.dep_path[num] + os.sep + dep),
+                             (self.dep_path[num] + os.sep +
+                              dep.split(os.sep)[-1]),
+                             (os.getcwd() + os.sep + self.dep_path[num]
+                              + os.sep + dep),
+                             (os.getcwd() + os.sep + self.dep_path[num]
+                              + os.sep + dep.split(os.sep)[-1])]
                 for poss in possibles:
                     self.debug('p' + poss + ' ' + str(os.path.exists(poss)))
                     if os.path.exists(poss):
@@ -262,7 +263,7 @@ to depend on any external code bases')
             if opcode[0][0] == ':':
                 label_name = opcode[0][1:]
                 if label_name not in self.labels:
-                    self.debug('premember line ' + str(self.line_number) +\
+                    self.debug('premember line ' + str(self.line_number) +
                                ' as label "' + label_name + '"')
                     if label_name in self.labels:
                         raise DuplicateLabelError([label_name,
@@ -273,7 +274,7 @@ to depend on any external code bases')
             elif opcode[0][-1] == ':':
                 label_name = opcode[0][:-1]
                 if label_name not in self.labels:
-                    self.debug('premember line ' + str(self.line_number)\
+                    self.debug('premember line ' + str(self.line_number)
                                + ' as label "' + label_name + '"')
                     if label_name in self.labels:
                         raise DuplicateLabelError([label_name,
@@ -305,7 +306,7 @@ to depend on any external code bases')
         if opcode[0] in ['SET', 'ADD', 'DIV', 'MUL']:
             self.debug("pLine number: " + str(self.line_number))
             #, '\nopcode:', opcode, '\ndata:', str(opcode[1])
-            self.debug('pset memory location ' + opcode[1] + ' to '\
+            self.debug('pset memory location ' + opcode[1] + ' to '
                        + opcode[2])
             value_proper = None
             if '$' in opcode[2].upper():
@@ -324,7 +325,7 @@ to depend on any external code bases')
                 opcode[1] = 'P'
             else:
                 try:
-                    self.debug('snot working: ' + opcode[2] + ' : ' +\
+                    self.debug('snot working: ' + opcode[2] + ' : ' +
                                self.ops[opcode[2].upper()])
                 except KeyError:
                     self.debug('sdefinately not in there')
@@ -348,7 +349,7 @@ to depend on any external code bases')
                     except ValueError:
                         pass
                     if type(value_proper) != int:
-                        self.debug('svalue_proper: ' + str(value_proper) + \
+                        self.debug('svalue_proper: ' + str(value_proper) +
                                    str(type(value_proper)))
                     value_proper = str(value_proper).rjust(4, '0')
                 else:
