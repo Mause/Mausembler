@@ -43,7 +43,7 @@ for test in OPTIONS.keys():
 TEST_NUM = 0
 print '\n\n0. All tests'
 for test in OPTIONS.keys():
-    TEST_NUM += 0
+    TEST_NUM += 1
     print str(TEST_NUM) + '.',
     print test.replace('_', ' ')
 

@@ -20,22 +20,22 @@ class Assembler:
     def __init__(self):
         self.ops = {'SET': 0x01, 'ADD': 0x02, 'SUB': 0x03,
                     'MUL': 0x04, 'MLI': 0x05, 'DIV': 0x06,
-                    'DVI': 0x07, 'MOD': 0x08, 'AND': 0x09,
-                    'BOR': 0x0a, 'XOR': 0x0b, 'SHR': 0x0c,
-                    'ASR': 0x0d, 'SHL': 0x0e, 'STI': 0x0f,
-                    'IFB': 0x10,
+                    'DVI': 0x07, 'MOD': 0x08, 'MDI': 0x09,
+                    'AND': 0x0a, 'BOR': 0x0b, 'XOR': 0x0c,
+                    'ASR': 0x0e, 'SHL': 0x0f, 'IFB': 0x10,
                     'IFC': 0x11, 'IFE': 0x12, 'IFN': 0x13,
                     'IFG': 0x14, 'IFA': 0x15, 'IFL': 0x16,
-                    'IFU': 0x17,
-                    'ADX': 0x1a, 'SBX': 0x1b}  # 'DAT':0x}
-        self.spec_ops = {'JSR': 0x01,
-                         'HCF': 0x07,
-                         'INT': 0x08,
-                         'IAG': 0x09,
-                         'IAS': 0x0a,
-                         'HWN': 0x10,
-                         'HQN': 0x11,
-                         'HWI': 0x12}
+                    'IFU': 0x17, 'NON': 0x18, 'NON': 0x19,
+                    'ADX': 0x1a, 'SBX': 0x1b, 'NON': 0x1c,
+                    'NON': 0x1d, 'STI': 0x1e, 'STD': 0x1f}  # 'DAT':0x}
+        self.spec_ops = {'NON': 0x00, 'JSR': 0x01, 'NON': 0x02, 'NON': 0x03,
+                         'NON': 0x04, 'NON': 0x05, 'NON': 0x06, 'HCF': 0x07,
+                         'INT': 0x08, 'IAG': 0x09, 'IAS': 0x0a, 'NON': 0x0b,
+                         'NON': 0x0c, 'NON': 0x0d, 'NON': 0x0e, 'NON': 0x0f,
+                         'HWN': 0x10, 'HQN': 0x11, 'HWI': 0x12, 'NON': 0x13,
+                         'NON': 0x14, 'NON': 0x15, 'NON': 0x16, 'NON': 0x17,
+                         'NON': 0x18, 'NON': 0x19, 'NON': 0x1a, 'NON': 0x1b,
+                         'NON': 0x1c, 'NON': 0x1d, 'NON': 0x1e, 'NON': 0x1f}
         self.registers = {'A': 0x00, 'B': 0x01,
                           'C': 0x02, 'X': 0x03,
                           'Y': 0x04, 'Z': 0x05,
@@ -50,7 +50,7 @@ class Assembler:
                           'PEEK': 0x19, '[SP]': 0x19,
                           'PUSH': 0x1a, '[--SP]': 0x1a,
                           'SP': 0x1b, 'PC': 0x1c,
-                          'O': 0x1d, '[PC++]': 0x1e,
+                          'EX': 0x1d, '[PC++]': 0x1e,
                           'PC++': 0x1f}
         self.input_filename = ''
         self.input_file = None
