@@ -44,14 +44,32 @@ class Assembler:
                           '[C]': 0x0a, '[X]': 0x0b,
                           '[Y]': 0x0c, '[Z]': 0x0d,
                           '[I]': 0x0e, '[J]': 0x0f,
-                          # Special registers
                           # 0x10-0x17: [next word + register] goes here
                           'POP': 0x18, '[SP++]': 0x18,
+                          'PUSH': 0x18, '[--SP': 0x18,
                           'PEEK': 0x19, '[SP]': 0x19,
                           'PUSH': 0x1a, '[--SP]': 0x1a,
                           'SP': 0x1b, 'PC': 0x1c,
                           'EX': 0x1d, '[PC++]': 0x1e,
-                          'PC++': 0x1f}
+                          'PC++': 0x1f,
+                          # up and coming - stuff i dont know what to do with
+                          'NON': 0x20, 'NON': 0x21,
+                          'NON': 0x22, 'NON': 0x23,
+                          'NON': 0x24, 'NON': 0x25,
+                          'NON': 0x26, 'NON': 0x27,
+                          'NON': 0x28, 'NON': 0x29,
+                          'NON': 0x2a, 'NON': 0x2b,
+                          'NON': 0x2c, 'NON': 0x2d,
+                          'NON': 0x2e, 'NON': 0x2f,
+                          'NON': 0x30, 'NON': 0x31,
+                          'NON': 0x32, 'NON': 0x33,
+                          'NON': 0x34, 'NON': 0x35,
+                          'NON': 0x36, 'NON': 0x37,
+                          'NON': 0x38, 'NON': 0x39,
+                          'NON': 0x3a, 'NON': 0x3b,
+                          'NON': 0x3c, 'NON': 0x3d,
+                          'NON': 0x3e, 'NON': 0x3f}
+
         self.input_filename = ''
         self.input_file = None
         self.output_file = None
@@ -303,64 +321,85 @@ to depend on any external code bases''')
         data_word = []
         output_data = []
         self.debug('pOpcode: ' + str([x for x in opcode]))
+        
         if opcode[0] in ['SET', 'ADD', 'DIV', 'MUL']:
             self.debug("pLine number: " + str(self.line_number))
             #, '\nopcode:', opcode, '\ndata:', str(opcode[1])
-            self.debug('pset memory location ' + opcode[1] + ' to '
+            self.debug('pperform set operation with' + opcode[1] + ' and '
                        + opcode[2])
-            value_proper = None
-            if '$' in opcode[2].upper():
-                self.debug('sSirCmpwn; damn you sir!')
-            elif opcode[2].upper() in self.ops:
-                value_proper = self.ops[opcode[2]]
-            elif opcode[2].upper() in self.labels:
-                value_proper = 'PASS'
-            elif opcode[2].upper() in self.registers:
-                value_proper = self.registers[opcode[2].upper()]
-            elif '[' in opcode[2] and opcode[2] not in self.registers:
-                self.debug("syou're pretty much screwed (opcode[2])")
-                value_proper = 'PASS'
-            elif '[' in opcode[1] and opcode[1] not in self.registers:
-                self.debug("syou're pretty much screwed (opcode[1])")
-                opcode[1] = 'P'
-            else:
-                try:
-                    self.debug('snot working: ' + opcode[2] + ' : ' +
-                               self.ops[opcode[2].upper()])
-                except KeyError:
-                    self.debug('sdefinately not in there')
-                value_proper = opcode[2]
-                self.debug('svalue_proper: ' + str(value_proper))
-                self.debug("slabels: " + str([label for label in self.labels]))
-                if value_proper[0:2] != '0x':
-                    try:
-                        value_proper = hex(int(value_proper)).split('x')[1]
-                        self.debug('snow in hex')
-                    except TypeError:
-                        self.debug('salready in hex')
+#            value_proper = None
+            opcodewk = opcode
+            del opcode
+            opcode_out_data = []
+            for opcodesub in opcodewk:#  [opcodewk[1], opcodewk[2]]:
+#                print 'opcodesub_start:', str(opcodesub)
+                if opcodesub.upper() in self.ops:
+                    opcodesub = self.ops[opcodesub]
+                elif opcodesub.upper() in self.labels:
+                    opcodesub = 'PASS'
+                elif opcodesub.upper() in self.registers:
+                    opcodesub = self.registers[opcodesub.upper()]
+                elif '[' in opcodesub and opcodesub not in self.registers:
+                    self.debug("syou're pretty much screwed (opcode[2])")
+                    value_proper = 'P'
                 else:
-                    value_proper = value_proper.split('x')[1]
-
-                # and value_proper[0:2] == '0x':
-                if len(str(value_proper)) != 4:
-                    self.debug('snot long enough! justifying!')
                     try:
-                        value_proper = int(value_proper)
-                    except ValueError:
-                        pass
-                    if type(value_proper) != int:
-                        self.debug('svalue_proper: ' + str(value_proper) +
-                                   str(type(value_proper)))
-                    value_proper = str(value_proper).rjust(4, '0')
-                else:
-                    self.debug('sok, value_proper is long enough')
+                        self.debug('snot working: ' + opcodesub + ' : ' +
+                                   self.ops[opcodesub.upper()])
+                    except KeyError:
+                        self.debug('sdefinately not in there')
+                    self.debug("slabels: " + str([label for label in self.labels]))
+                    if opcodesub[0:2] != '0x':
+                        try:
+                            opcodesub = hex(int(opcodesub)).split('x')[1]
+                            self.debug('snow in hex')
+                        except TypeError:
+                            self.debug('salready in hex')
+                    else:
+                        opcodesub = opcodesub.split('x')[1]
 
-            output_data = [0x1f, (self.registers[opcode[1].upper()]),
-                                (self.ops[opcode[0].upper()]), (value_proper)]
+                    # and value_proper[0:2] == '0x':
+                    if len(str(opcodesub)) != 4:
+                        self.debug('snot long enough! justifying!')
+                        try:
+                            opcodesub = int(opcodesub)
+                        except ValueError:
+                            pass
+                        #if type(opcodesub) != int:
+#                            self.debug('svalue_proper: ' + str(value_proper) +
+ #                                      str(type(value_proper)))
+                        opcodesub = str(opcodesub).rjust(4, '0')
+                    else:
+                        self.debug('sok, opcodesub is long enough')
+        #        print 'opcodesub_end:', str(opcodesub)
+                opcode_out_data.append(opcodesub)
+
+#            print '1.', str(opcodewk)
+ #           print '2.', str(opcode_out_data)
+
+  #          print 'opcodewk_start[0]:', str(opcodewk[0])
+   #         print 'opcodewk_end[0]  :', str(opcode_out_data[0])
+    #        print 'opcodewk_start[1]:', str(opcodewk[1])
+     #       print 'opcodewk_end[1]  :', str(opcode_out_data[1])
+      #      print 'opcodewk_start[2]:', str(opcodewk[2])
+       #     print 'opcodewk_end[2]  :', str(opcode_out_data[2])
+            
+            output_data = [0x1f, opcode_out_data[0],
+                           opcode_out_data[1],
+                           opcode_out_data[2]]
 
             output_data[0] = (output_data[0] << 10)
             output_data[1] = (output_data[1] << 4)
-            final = hex(output_data[0] ^ output_data[1] ^ output_data[2])
+
+#            print 'output_data:', str(output_data)
+            temporary = []
+            for thing in output_data:
+                try:
+                    temporary.append(int(thing))
+                except ValueError:
+                    pass  # MEH
+            temporary = temporary[0] ^ temporary[1] ^ temporary[2]
+            final = hex(temporary)
             data_word.append(final)
             data_word[-1] = data_word[-1].split('x')[1]
             data_word.append(str(output_data[3]))
@@ -368,7 +407,6 @@ to depend on any external code bases''')
             self.debug('pdata_word: ' + str(data_word))
             data_word = ''.join(data_word)
 
-            del value_proper
 
 #        elif opcode[0] == 'ADD':
  #           self.debug('pset', opcode[1], 'to', opcode[1], '+', opcode[2])

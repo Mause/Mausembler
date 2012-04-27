@@ -58,7 +58,7 @@
   IFG A, 99
     ADD PC, 6    ; jumps to ilog10_above99
   ADD 0xfff6, A  ; 0xfff6 = 0x10000 - 10
-  SET A, O       ; now O = (A >= 10)
+  SET A, EX       ; now O = (A >= 10)
   SET PC, POP
 :ilog10_above9999
   SET A, 4
@@ -66,7 +66,7 @@
 :ilog10_above99
   ADD 0xfc18, A  ; 0xfc18 = 0x10000 - 1000
   SET A, 2       ; now O = (A >= 1000)
-  BOR A, O
+  BOR A, EX
   SET PC, POP
 
 ; same as ilog10 but optimized for smaller inputs.
@@ -88,7 +88,7 @@
   SET PC, POP
 :ilog10_below100
   ADD 0xfff6, A  ; 0xfff6 = 0x10000 - 10
-  SET A, O       ; now O = (A >= 10)
+  SET A, EX       ; now O = (A >= 10)
   SET PC, POP
 :ilog10_below10000
   ADD 0xfc18, A  ; 0xfc18 = 0x10000 - 1000
