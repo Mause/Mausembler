@@ -331,8 +331,8 @@ to depend on any external code bases''')
 
         if opcode[0] in self.basic_opcodes.keys():
             self.debug("pLine number: " + str(self.line_number))
-            self.debug('pperform ' + opcode[0] + ' operation with' + opcode[1] +
-                       ' and ' + opcode[2])
+            self.debug('pperform ' + opcode[0] + ' operation with' +
+                       opcode[1] + ' and ' + opcode[2])
             opcodewk = opcode
             del opcode
             opcode_out_data = []
