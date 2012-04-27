@@ -48,7 +48,7 @@ class Assembler:
                           'POP': 0x18, '[SP++]': 0x18,
                           'PUSH': 0x18, '[--SP': 0x18,
                           'PEEK': 0x19, '[SP]': 0x19,
-                          'PUSH': 0x1a, '[--SP]': 0x1a,
+                          '[SP+[PC++]]': 0x1a, '[--SP]': 0x1a,
                           'SP': 0x1b, 'PC': 0x1c,
                           'EX': 0x1d, '[PC++]': 0x1e,
                           'PC++': 0x1f,
@@ -321,19 +321,20 @@ to depend on any external code bases''')
         data_word = []
         output_data = []
         self.debug('pOpcode: ' + str([x for x in opcode]))
-        
+
         if opcode[0] in ['SET', 'ADD', 'DIV', 'MUL']:
             self.debug("pLine number: " + str(self.line_number))
             #, '\nopcode:', opcode, '\ndata:', str(opcode[1])
             self.debug('pperform set operation with' + opcode[1] + ' and '
                        + opcode[2])
-#            value_proper = None
+
             opcodewk = opcode
             del opcode
             opcode_out_data = []
-            for opcodesub in opcodewk:#  [opcodewk[1], opcodewk[2]]:
-#                print 'opcodesub_start:', str(opcodesub)
-                if opcodesub.upper() in self.ops:
+            for opcodesub in opcodewk:
+                if '$' in opcodesub.upper():
+                    print 'SirCmpwn is up to his old tricks again'
+                elif opcodesub.upper() in self.ops:
                     opcodesub = self.ops[opcodesub]
                 elif opcodesub.upper() in self.labels:
                     opcodesub = 'PASS'
@@ -341,14 +342,15 @@ to depend on any external code bases''')
                     opcodesub = self.registers[opcodesub.upper()]
                 elif '[' in opcodesub and opcodesub not in self.registers:
                     self.debug("syou're pretty much screwed (opcode[2])")
-                    value_proper = 'P'
+                    opcodesub = 'P'
                 else:
                     try:
                         self.debug('snot working: ' + opcodesub + ' : ' +
                                    self.ops[opcodesub.upper()])
                     except KeyError:
                         self.debug('sdefinately not in there')
-                    self.debug("slabels: " + str([label for label in self.labels]))
+                    self.debug("slabels: " +
+                               str([label for label in self.labels]))
                     if opcodesub[0:2] != '0x':
                         try:
                             opcodesub = hex(int(opcodesub)).split('x')[1]
@@ -383,7 +385,7 @@ to depend on any external code bases''')
      #       print 'opcodewk_end[1]  :', str(opcode_out_data[1])
       #      print 'opcodewk_start[2]:', str(opcodewk[2])
        #     print 'opcodewk_end[2]  :', str(opcode_out_data[2])
-            
+
             output_data = [0x1f, opcode_out_data[0],
                            opcode_out_data[1],
                            opcode_out_data[2]]
@@ -406,7 +408,6 @@ to depend on any external code bases''')
 
             self.debug('pdata_word: ' + str(data_word))
             data_word = ''.join(data_word)
-
 
 #        elif opcode[0] == 'ADD':
  #           self.debug('pset', opcode[1], 'to', opcode[1], '+', opcode[2])
