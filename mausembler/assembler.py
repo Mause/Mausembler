@@ -92,7 +92,7 @@ class Assembler:
         print "Mausembler; self-titled!\n"
 
     def debug(self, data):
-        "Simply debug function"
+        "Simple debug function"
         if data[0] == 'p':
             data = '* ' + data[1:]
         elif data[0] == 's':
@@ -228,8 +228,8 @@ to depend on any external code bases''')
         self.output_file.close()
         if errors != 0:
             print
-            print (str(errors) + ' out of ' + str(total_lines) +
-                   'parseable lines threw errors')
+            print (str(errors) + ' out of '
+                   + str(total_lines) + ' parseable lines threw errors')
             self.log_file.info(
                 str(errors) + ' out of '
                 + str(total_lines) + ' parseable lines threw errors')
@@ -401,12 +401,6 @@ or something was not caught''')
 
             self.debug('pdata_word: ' + str(data_word))
             data_word = ''.join(data_word)
-
-   #     elif opcode[0] == 'MOD':
-    #        print '* set', opcode[1], 'to', opcode[1], '%', opcode[2]
-     #       self.output_file.write(str(self.basic_opcodes[opcode[0]]))
-
-        #return output_data
         return data_word
 
     def print_credits(self):
