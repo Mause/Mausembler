@@ -18,58 +18,61 @@ except ImportError:
 class Assembler:
     "Does the assembling stuff :D"
     def __init__(self):
-        self.ops = {'SET': 0x01, 'ADD': 0x02, 'SUB': 0x03,
-                    'MUL': 0x04, 'MLI': 0x05, 'DIV': 0x06,
-                    'DVI': 0x07, 'MOD': 0x08, 'MDI': 0x09,
-                    'AND': 0x0a, 'BOR': 0x0b, 'XOR': 0x0c,
-                    'ASR': 0x0e, 'SHL': 0x0f, 'IFB': 0x10,
-                    'IFC': 0x11, 'IFE': 0x12, 'IFN': 0x13,
-                    'IFG': 0x14, 'IFA': 0x15, 'IFL': 0x16,
-                    'IFU': 0x17, 'NON': 0x18, 'NON': 0x19,
-                    'ADX': 0x1a, 'SBX': 0x1b, 'NON': 0x1c,
-                    'NON': 0x1d, 'STI': 0x1e, 'STD': 0x1f}  # 'DAT':0x}
-        self.spec_ops = {'NON': 0x00, 'JSR': 0x01, 'NON': 0x02, 'NON': 0x03,
-                         'NON': 0x04, 'NON': 0x05, 'NON': 0x06, 'HCF': 0x07,
-                         'INT': 0x08, 'IAG': 0x09, 'IAS': 0x0a, 'NON': 0x0b,
-                         'NON': 0x0c, 'NON': 0x0d, 'NON': 0x0e, 'NON': 0x0f,
-                         'HWN': 0x10, 'HQN': 0x11, 'HWI': 0x12, 'NON': 0x13,
-                         'NON': 0x14, 'NON': 0x15, 'NON': 0x16, 'NON': 0x17,
-                         'NON': 0x18, 'NON': 0x19, 'NON': 0x1a, 'NON': 0x1b,
-                         'NON': 0x1c, 'NON': 0x1d, 'NON': 0x1e, 'NON': 0x1f}
-        self.registers = {'A': 0x00, 'B': 0x01,
-                          'C': 0x02, 'X': 0x03,
-                          'Y': 0x04, 'Z': 0x05,
-                          'I': 0x06, 'J': 0x07,
-                          '[A]': 0x08, '[B]': 0x09,
-                          '[C]': 0x0a, '[X]': 0x0b,
-                          '[Y]': 0x0c, '[Z]': 0x0d,
-                          '[I]': 0x0e, '[J]': 0x0f,
-                          # 0x10-0x17: [next word + register] goes here
-                          'POP': 0x18, '[SP++]': 0x18,
-                          'PUSH': 0x18, '[--SP': 0x18,
-                          'PEEK': 0x19, '[SP]': 0x19,
-                          '[SP+[PC++]]': 0x1a, '[--SP]': 0x1a,
-                          'SP': 0x1b, 'PC': 0x1c,
-                          'EX': 0x1d, '[PC++]': 0x1e,
-                          'PC++': 0x1f,
-                          # up and coming - stuff i dont know what to do with
-                          'NON': 0x20, 'NON': 0x21,
-                          'NON': 0x22, 'NON': 0x23,
-                          'NON': 0x24, 'NON': 0x25,
-                          'NON': 0x26, 'NON': 0x27,
-                          'NON': 0x28, 'NON': 0x29,
-                          'NON': 0x2a, 'NON': 0x2b,
-                          'NON': 0x2c, 'NON': 0x2d,
-                          'NON': 0x2e, 'NON': 0x2f,
-                          'NON': 0x30, 'NON': 0x31,
-                          'NON': 0x32, 'NON': 0x33,
-                          'NON': 0x34, 'NON': 0x35,
-                          'NON': 0x36, 'NON': 0x37,
-                          'NON': 0x38, 'NON': 0x39,
-                          'NON': 0x3a, 'NON': 0x3b,
-                          'NON': 0x3c, 'NON': 0x3d,
-                          'NON': 0x3e, 'NON': 0x3f}
-
+        self.basic_opcodes = {
+            'SET': 0x01, 'ADD': 0x02, 'SUB': 0x03,
+            'MUL': 0x04, 'MLI': 0x05, 'DIV': 0x06,
+            'DVI': 0x07, 'MOD': 0x08, 'MDI': 0x09,
+            'AND': 0x0a, 'BOR': 0x0b, 'XOR': 0x0c,
+            'ASR': 0x0e, 'SHL': 0x0f, 'IFB': 0x10,
+            'IFC': 0x11, 'IFE': 0x12, 'IFN': 0x13,
+            'IFG': 0x14, 'IFA': 0x15, 'IFL': 0x16,
+            'IFU': 0x17, 'NON': 0x18, 'NON': 0x19,
+            'ADX': 0x1a, 'SBX': 0x1b, 'NON': 0x1c,
+            'NON': 0x1d, 'STI': 0x1e, 'STD': 0x1f}
+            # 'DAT':0x}
+        self.special_opcodes = {
+            'NON': 0x00, 'JSR': 0x01, 'NON': 0x02, 'NON': 0x03,
+            'NON': 0x04, 'NON': 0x05, 'NON': 0x06, 'HCF': 0x07,
+            'INT': 0x08, 'IAG': 0x09, 'IAS': 0x0a, 'IAP': 0x0b,
+            'NON': 0x0c, 'NON': 0x0d, 'NON': 0x0e, 'NON': 0x0f,
+            'HWN': 0x10, 'HQN': 0x11, 'HWI': 0x12, 'NON': 0x13,
+            'NON': 0x14, 'NON': 0x15, 'NON': 0x16, 'NON': 0x17,
+            'NON': 0x18, 'NON': 0x19, 'NON': 0x1a, 'NON': 0x1b,
+            'NON': 0x1c, 'NON': 0x1d, 'NON': 0x1e, 'NON': 0x1f}
+        self.values = {
+            'A': 0x00, 'B': 0x01,
+            'C': 0x02, 'X': 0x03,
+            'Y': 0x04, 'Z': 0x05,
+            'I': 0x06, 'J': 0x07,
+            '[A]': 0x08, '[B]': 0x09,
+            '[C]': 0x0a, '[X]': 0x0b,
+            '[Y]': 0x0c, '[Z]': 0x0d,
+            '[I]': 0x0e, '[J]': 0x0f,
+            # 0x10-0x17: [next word + register] goes here
+            'POP': 0x18, '[SP++]': 0x18,
+            'PUSH': 0x18, '[--SP': 0x18,
+            'PEEK': 0x19, '[SP]': 0x19,
+            '[SP+[PC++]]': 0x1a, '[--SP]': 0x1a,
+            'SP': 0x1b, 'PC': 0x1c,
+            'EX': 0x1d, '[PC++]': 0x1e,
+            'PC++': 0x1f,
+            # up and coming - stuff i dont know what to do with
+            'NON': 0x20, 'NON': 0x21,
+            'NON': 0x22, 'NON': 0x23,
+            'NON': 0x24, 'NON': 0x25,
+            'NON': 0x26, 'NON': 0x27,
+            'NON': 0x28, 'NON': 0x29,
+            'NON': 0x2a, 'NON': 0x2b,
+            'NON': 0x2c, 'NON': 0x2d,
+            'NON': 0x2e, 'NON': 0x2f,
+            'NON': 0x30, 'NON': 0x31,
+            'NON': 0x32, 'NON': 0x33,
+            'NON': 0x34, 'NON': 0x35,
+            'NON': 0x36, 'NON': 0x37,
+            'NON': 0x38, 'NON': 0x39,
+            'NON': 0x3a, 'NON': 0x3b,
+            'NON': 0x3c, 'NON': 0x3d,
+            'NON': 0x3e, 'NON': 0x3f}
         self.input_filename = ''
         self.input_file = None
         self.output_file = None
@@ -225,11 +228,11 @@ to depend on any external code bases''')
         self.output_file.close()
         if errors != 0:
             print
-            print (str(errors), 'out of', str(total_lines),
+            print (str(errors) + ' out of ' + str(total_lines) +
                    'parseable lines threw errors')
-            self.log_file.info(str(errors) + ' out of '
-                               + str(total_lines) +
-                               ' parseable lines threw errors')
+            self.log_file.info(
+                str(errors) + ' out of '
+                + str(total_lines) + ' parseable lines threw errors')
         print '\nDone\n'
         self.log_file.info('Done')
 
@@ -238,6 +241,10 @@ to depend on any external code bases''')
     def do_dependencies(self, data):
         """Simply loops through each line in the file,
         and determines which files the file depends on"""
+        # This function sounds good, in theory,
+        # but in reality it won't work for
+        # dependencies that have dependencies
+        # themselves
         self.debug("pDetermining dependencies...")
         if data not in self.data_done:
             self.data_done.append(data)
@@ -322,31 +329,29 @@ to depend on any external code bases''')
         output_data = []
         self.debug('pOpcode: ' + str([x for x in opcode]))
 
-        if opcode[0] in ['SET', 'ADD', 'DIV', 'MUL']:
+        if opcode[0] in self.basic_opcodes.keys():
             self.debug("pLine number: " + str(self.line_number))
-            #, '\nopcode:', opcode, '\ndata:', str(opcode[1])
-            self.debug('pperform set operation with' + opcode[1] + ' and '
-                       + opcode[2])
-
+            self.debug('pperform ' + opcode[0] + ' operation with' + opcode[1] +
+                       ' and ' + opcode[2])
             opcodewk = opcode
             del opcode
             opcode_out_data = []
             for opcodesub in opcodewk:
                 if '$' in opcodesub.upper():
                     print 'SirCmpwn is up to his old tricks again'
-                elif opcodesub.upper() in self.ops:
-                    opcodesub = self.ops[opcodesub]
+                elif opcodesub.upper() in self.basic_opcodes:
+                    opcodesub = self.basic_opcodes[opcodesub]
                 elif opcodesub.upper() in self.labels:
                     opcodesub = 'PASS'
-                elif opcodesub.upper() in self.registers:
-                    opcodesub = self.registers[opcodesub.upper()]
-                elif '[' in opcodesub and opcodesub not in self.registers:
+                elif opcodesub.upper() in self.values:
+                    opcodesub = self.values[opcodesub.upper()]
+                elif '[' in opcodesub and opcodesub not in self.values:
                     self.debug("syou're pretty much screwed (opcode[2])")
                     opcodesub = 'P'
                 else:
                     try:
                         self.debug('snot working: ' + opcodesub + ' : ' +
-                                   self.ops[opcodesub.upper()])
+                                   self.basic_opcodes[opcodesub.upper()])
                     except KeyError:
                         self.debug('sdefinately not in there')
                     self.debug("slabels: " +
@@ -357,34 +362,22 @@ to depend on any external code bases''')
                             self.debug('snow in hex')
                         except TypeError:
                             self.debug('salready in hex')
+                        except ValueError:
+                            self.debug('''seither error in users program,
+or something was not caught''')
                     else:
                         opcodesub = opcodesub.split('x')[1]
 
-                    # and value_proper[0:2] == '0x':
                     if len(str(opcodesub)) != 4:
                         self.debug('snot long enough! justifying!')
                         try:
                             opcodesub = int(opcodesub)
                         except ValueError:
                             pass
-                        #if type(opcodesub) != int:
-#                            self.debug('svalue_proper: ' + str(value_proper) +
- #                                      str(type(value_proper)))
                         opcodesub = str(opcodesub).rjust(4, '0')
                     else:
                         self.debug('sok, opcodesub is long enough')
-        #        print 'opcodesub_end:', str(opcodesub)
                 opcode_out_data.append(opcodesub)
-
-#            print '1.', str(opcodewk)
- #           print '2.', str(opcode_out_data)
-
-  #          print 'opcodewk_start[0]:', str(opcodewk[0])
-   #         print 'opcodewk_end[0]  :', str(opcode_out_data[0])
-    #        print 'opcodewk_start[1]:', str(opcodewk[1])
-     #       print 'opcodewk_end[1]  :', str(opcode_out_data[1])
-      #      print 'opcodewk_start[2]:', str(opcodewk[2])
-       #     print 'opcodewk_end[2]  :', str(opcode_out_data[2])
 
             output_data = [0x1f, opcode_out_data[0],
                            opcode_out_data[1],
@@ -409,21 +402,9 @@ to depend on any external code bases''')
             self.debug('pdata_word: ' + str(data_word))
             data_word = ''.join(data_word)
 
-#        elif opcode[0] == 'ADD':
- #           self.debug('pset', opcode[1], 'to', opcode[1], '+', opcode[2])
-  #          self.output_file.write(str(self.ops[opcode[0]]))
-   #     elif opcode[0] == 'SUB':
-    #        self.debug('pset', opcode[1], 'to', opcode[1], '-', opcode[2])
-     #       self.output_file.write(str(self.ops[opcode[0]]))
-      #  elif opcode[0] == 'MUL':
-       #     self.debug('pset', opcode[1], 'to', opcode[1], '*', opcode[2])
-        #    self.output_file.write(str(self.ops[opcode[0]]))
-#        elif opcode[0] == 'DIV':
- #           self.debug('pset', opcode[1], 'to', opcode[1], '/', opcode[2])
-  #          self.output_file.write(str(self.ops[opcode[0]]))
    #     elif opcode[0] == 'MOD':
     #        print '* set', opcode[1], 'to', opcode[1], '%', opcode[2]
-     #       self.output_file.write(str(self.ops[opcode[0]]))
+     #       self.output_file.write(str(self.basic_opcodes[opcode[0]]))
 
         #return output_data
         return data_word
