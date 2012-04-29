@@ -5,14 +5,14 @@ import os
 import sys
 import binascii
 import logging
-try:
-    from mausembler.custom_errors import DuplicateLabelError
-    from mausembler.custom_errors import FileNonExistantError
-    from mausembler.custom_errors import FileExistsError
-except ImportError:
-    from custom_errors import DuplicateLabelError
-    from custom_errors import FileNonExistantError
-    from custom_errors import FileExistsError
+#try:
+#    from mausembler.custom_errors import DuplicateLabelError
+#    from mausembler.custom_errors import FileNonExistantError
+#    from mausembler.custom_errors import FileExistsError
+#except ImportError:
+from custom_errors import DuplicateLabelError
+from custom_errors import FileNonExistantError
+from custom_errors import FileExistsError
 
 
 class Assembler:
@@ -215,9 +215,12 @@ to depend on any external code bases''')
         self.debug('pAbout to write output data to "' + output_filename + '"')
         errors = 0
         total_lines = 0
-        for line in self.tobe_written_data:
+        for line in range(len(self.tobe_written_data)):
+            print line-len(self.tobe_written_data)
+            line = self.tobe_written_data[line-len(self.tobe_written_data)]
             if line != '' and line != () and line != []:
                 self.debug('pline: ' + line)
+                print 'line:', line
                 total_lines += 1
                 try:
                     self.output_file.write(binascii.a2b_hex(line))
@@ -325,83 +328,132 @@ to depend on any external code bases''')
         # returns 0x7c01
         # sample code as supplied by startling
 
+        # hex(0x7c<<24 ^ 0x2<<20 ^ 0x1<<16 ^ 0x1)
+        # returns 0x7c11f888
+        # my own (revised) reference code
+
         data_word = []
         output_data = []
         self.debug('pOpcode: ' + str([x for x in opcode]))
 
+#        self.debug('p'+str([type(x) for x in opcode]))
+        part_b_primary = 0x1f  # will take the next word literally, unless otherwise specified
         if opcode[0] in self.basic_opcodes.keys():
             self.debug("pLine number: " + str(self.line_number))
-            self.debug('pperform ' + opcode[0] + ' operation with' +
-                       opcode[1] + ' and ' + opcode[2])
+            self.debug('pperform ' + opcode[0].upper() + ' operation with ' +
+                       opcode[1].upper() + ' and ' + opcode[2].upper())
             opcodewk = opcode
             del opcode
             opcode_out_data = []
+            print 'opcodewk:', opcodewk
             for opcodesub in opcodewk:
                 if '$' in opcodesub.upper():
                     print 'SirCmpwn is up to his old tricks again'
-                elif opcodesub.upper() in self.basic_opcodes:
+                elif opcodesub.upper() in self.basic_opcodes.keys():
                     opcodesub = self.basic_opcodes[opcodesub]
-                elif opcodesub.upper() in self.labels:
+                elif opcodesub.upper() in self.labels.keys():
                     opcodesub = 'PASS'
-                elif opcodesub.upper() in self.values:
+                elif opcodesub.upper() in self.values.keys():
                     opcodesub = self.values[opcodesub.upper()]
+                elif [opcodesub[0], opcodesub[-1]] == ['[', ']']:
+                    part_b_primary = 0x1e  # okay, gonna tell the cpu to interpret
+                                           # the next word as a pointer
+                    if opcodesub[1:-1][:2] == '0x':
+                        opcodesub = opcodesub[1:-1]
+                    else:
+                        opcodesub = 'PASS'
+#                elif opcodesub.upper() == '[A+1]':
+                    
                 elif '[' in opcodesub and opcodesub not in self.values:
                     self.debug("syou're pretty much screwed (opcode[2])")
                     opcodesub = 'P'
                 else:
+                    if opcodesub[0:2] == '0b':
+                        opcodesub = int(opcodesub[2:], 2)
                     try:
-                        self.debug('snot working: ' + opcodesub + ' : ' +
-                                   self.basic_opcodes[opcodesub.upper()])
+                        self.debug('snot working: ' + str(opcodesub) + ' : ' +
+                                   self.basic_opcodes[str(opcodesub).upper()])
                     except KeyError:
                         self.debug('sdefinately not in there')
                     self.debug("slabels: " +
                                str([label for label in self.labels]))
-                    if opcodesub[0:2] != '0x':
+                    if str(opcodesub)[0:2] != '0x':
                         try:
-                            opcodesub = hex(int(opcodesub)).split('x')[1]
-                            self.debug('snow in hex')
+                            self.debug('stry: '+str(type(opcodesub)))
+                            opcodesub = hex(int(opcodesub))#.split('x')[1]
+                            self.debug('snow in hex: '+str(type(opcodesub)))
                         except TypeError:
                             self.debug('salready in hex')
                         except ValueError:
                             self.debug('''seither error in users program,
 or something was not caught''')
                     else:
-                        opcodesub = opcodesub.split('x')[1]
-
-                    if len(str(opcodesub)) != 4:
-                        self.debug('snot long enough! justifying!')
-                        try:
-                            opcodesub = int(opcodesub)
-                        except ValueError:
-                            pass
-                        opcodesub = str(opcodesub).rjust(4, '0')
-                    else:
-                        self.debug('sok, opcodesub is long enough')
+                        opcodesub = opcodesub#.split('x')[1]
+            
+                if self.strd(opcodesub): print 'opcodesub:', hex(int(opcodesub, 16))
+                else: print 'opcodesub:', hex(int(opcodesub))
                 opcode_out_data.append(opcodesub)
 
-            output_data = [0x1f, opcode_out_data[0],
-                           opcode_out_data[1],
-                           opcode_out_data[2]]
+            print 'opcode_out_data:', opcode_out_data
+            
+            output_data.append(opcode_out_data[0])
+            output_data.append(opcode_out_data[1])
+            output_data.append(opcode_out_data[2])
 
-            output_data[0] = (output_data[0] << 10)
-            output_data[1] = (output_data[1] << 4)
+            output_data = [hex(int(part_b_primary))] + output_data
 
-#            print 'output_data:', str(output_data)
-            temporary = []
-            for thing in output_data:
-                try:
-                    temporary.append(int(thing))
-                except ValueError:
-                    pass  # MEH
-            temporary = temporary[0] ^ temporary[1] ^ temporary[2]
-            final = hex(temporary)
+ #           except TypeError:
+  #              print output_data
+#            print 'output_data:', output_data
+ #           print 'output_data:'
+  #          for thing in range(len(output_data)):
+   #             try:
+    #                if type(output_data[thing]) == str: print hex(int(output_data[thing], 16))
+     #               else: print hex(int(output_data[thing]))
+      #              output_data[thing] = hex(int(output_data[thing], 16))
+       #         except (TypeError, ValueError):
+        #            print 'errored', output_data[thing]
+
+#            print 'output_data:', output_data
+ #           print 'output_data:', [type(x) for x in output_data]
+  #          print 'output_data[0]:', type(output_data[0])
+            # hex(0x7c<<24 ^ 0x2<<20 ^ 0x1<<16 ^ 0x1)
+            if self.strd(output_data[0]): output_data[0] = int(output_data[0], 16)<<26
+            else: output_data[0] = int(output_data[0])<<26
+            if self.strd(output_data[1]): output_data[1] = int(output_data[1], 16)<<20
+            else: output_data[1] = int(output_data[1])<<20
+            if self.strd(output_data[2]): output_data[2] = int(output_data[2], 16)<<16
+            else: output_data[2] = int(output_data[2])<<16
+            if self.strd(output_data[3]): output_data[3] = int(output_data[3], 16)
+            else: output_data[3] = int(output_data[3])
+
+            print 'output_data:', [hex(x) for x in output_data]
+            
+
+#            print 'output_data:', [type(x) for x in output_data]
+            
+            final = (output_data[0] ^ output_data[1])
+            final = (final ^ output_data[2])
+            final = (final ^ output_data[3])
+            final = hex(final)
+            print 'type:', type(final)
+            final = final.strip('L')
+
+            if self.strd(final): print 'final:', hex(int(final,16))
+            else: print 'final:', hex(int(final))
+
+            
             data_word.append(final)
-            data_word[-1] = data_word[-1].split('x')[1]
-            data_word.append(str(output_data[3]))
+            #data_word[-1] = data_word[-1].split('x')[1]
+            data_word[-1] = data_word[-1].split('x')[1]            
+      #      data_word.append(str(output_data[3]))
 
             self.debug('pdata_word: ' + str(data_word))
             data_word = ''.join(data_word)
+            print 
         return data_word
+    def strd(self, item):
+        return type(item) == str
 
     def print_credits(self):
         "Prints credits!"
@@ -413,6 +465,8 @@ if __name__ == '__main__':
     INST = Assembler()
     INST.print_credits()
     if len(sys.argv) >= 2:
+        if '--debug' in sys.argv:
+            INST.debug_toggle = True
         if sys.argv[1] in ['--help', '-h', '/?']:
             print '\nHeya! Looking for help? Look in the README.md file!'
         elif sys.argv[1] not in ['', None] and sys.argv[2] not in ['', None]:

@@ -20,7 +20,16 @@ OPTIONS = {'stdlib_ilog': [['examples', 'misc', 'ilog.dasm'],
            "addition_test_case": [['examples', 'math', 'addition.dasm'],
                            ['examples', 'math', 'addition.bin']],
            "math_test_case": [['examples', 'math', 'basic_commands.dasm'],
-                           ['examples', 'math', 'basic_commands.bin']]}
+                           ['examples', 'math', 'basic_commands.bin']],
+           "sixteens_draw_test": [['examples', 'sixteens', 'draw.asm'],
+                                  ['examples', 'sixteens', 'draw.bin']],
+           "sixteens_quick_example": [['examples', 'sixteens', 'quick_example.asm'],
+                                  ['examples', 'sixteens', 'quick_example.bin']],
+           "sixteens_refresh_test": [['examples', 'sixteens', 'refresh.asm'],
+                                  ['examples', 'sixteens', 'refresh.bin']],
+           "sixteens_vram_test": [['examples', 'sixteens', 'vram.asm'],
+                                  ['examples', 'sixteens', 'vram.bin']]}
+
 
 #for test in range(len(OPTIONS)):
 for test in OPTIONS.keys():
@@ -37,7 +46,7 @@ i'll clean up the .bin files from previous tests :)\n"
 for test in OPTIONS.keys():
     try:
         os.remove(os.getcwd() + os.sep + OPTIONS[test][1])
-    except WindowsError:
+    except (WindowsError, OSError):
         pass  # ok, that file doesnt exist
 
 TEST_NUM = 0
