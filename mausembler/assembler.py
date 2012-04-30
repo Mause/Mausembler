@@ -5,14 +5,14 @@ import os
 import sys
 import binascii
 import logging
-#try:
-#    from mausembler.custom_errors import DuplicateLabelError
-#    from mausembler.custom_errors import FileNonExistantError
-#    from mausembler.custom_errors import FileExistsError
-#except ImportError:
-from custom_errors import DuplicateLabelError
-from custom_errors import FileNonExistantError
-from custom_errors import FileExistsError
+try:
+    from mausembler.custom_errors import DuplicateLabelError
+    from mausembler.custom_errors import FileNonExistantError
+    from mausembler.custom_errors import FileExistsError
+except ImportError:
+    from custom_errors import DuplicateLabelError
+    from custom_errors import FileNonExistantError
+    from custom_errors import FileExistsError
 
 
 class Assembler:
@@ -86,6 +86,7 @@ class Assembler:
         self.conditioned_data = []
         self.line_number = 0
         self.log_file = ''
+        self.endian = 'big'
         # set the instance.debug_toggle
         # switch for debug info
         self.debug_toggle = False
@@ -461,13 +462,38 @@ or something was not caught''')
         print 'Secondly, startling! For answering my questions!'
         print 'And thirdly, me. For writing the code'
 
+help_data='''\
+Usage: mausembler.py [OPTIONS]... SOURCE DEST
+Assemble SOURCE to DEST
+
+Mandatory arguments to long options are mandatory for short options too.
+  -b, --big-endian             write the bytes in big endian order
+  -l, --little-endian          write the bytes in little endian order
+      --credits                shows credits
+
+Report mausembler bugs to <https://github.com/Mause/Mausembler/issues>
+Email me: jack.thatch@gmail.com\
+'''
+
+#      --version  output version information and exit
+#  -o, --overwrite              overwrite any existing files
+
 if __name__ == '__main__':
-    INST = Assembler()
-    INST.print_credits()
-    if len(sys.argv) >= 2:
-        if '--debug' in sys.argv:
-            INST.debug_toggle = True
-        if sys.argv[1] in ['--help', '-h', '/?']:
-            print '\nHeya! Looking for help? Look in the README.md file!'
-        elif sys.argv[1] not in ['', None] and sys.argv[2] not in ['', None]:
-            INST.load(sys.argv[1], sys.argv[2])
+    if sys.argv[-1] in ['--help', '-h', '/?']: print help_data
+    else:
+        
+        if '--credits' in sys.argv:
+            INST = Assembler()
+            print 'Mausembler; self-titled!'
+            INST.print_credits()
+        elif len(sys.argv) not in [1,2]:
+            INST = Assembler()
+            for x in sys.argv[1:]:
+                if x == '--debug': INST.debug_toggle = True
+                if x == '--big-endian' and '--little-endian' not in sys.argv[1:]: INST.endian = 'big'
+                elif x == '--little-endian' and '--big-endian' not in sys.argv[1:]: INST.endian = 'little'
+                if sys.argv[1] not in ['', None] and sys.argv[2] not in ['', None]:
+                    INST.load(sys.argv[1], sys.argv[2])
+        else:
+            print "mausembler: missing operands\nTry 'mv --help' for more information."
+

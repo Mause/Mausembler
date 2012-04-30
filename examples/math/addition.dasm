@@ -1,5 +1,5 @@
-set a, 5
-set c, 5
-add c, 5
-set b, 4
-add b, a
+SET A, 5 ; set a to 5
+SET C, 5 ; set c to five
+ADD C, 5 ; set c to c (5) + 5
+SET B, 4 ; set b to 4
+ADD B, A ; set B (4) to B + A
