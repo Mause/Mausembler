@@ -30,6 +30,7 @@ class Rep(object):
     def resolve(self, state):
         # this is used for special actions, such as opcodes or instructions
         # that expand out into more opcodes
+        # atm, the only action implemented is 'new_assembly'
         return None, None
 
 
