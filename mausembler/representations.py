@@ -47,7 +47,11 @@ class LabelRep(Rep):
         return "<Label: {}>".format(self.attrs['name'])
 
 
-class BasicOpcodeRep(Rep):
+class OpcodeRep(Rep):
+    pass
+
+
+class BasicOpcodeRep(OpcodeRep):
     contains_reference = False
 
     def __repr__(self):
@@ -57,11 +61,17 @@ class BasicOpcodeRep(Rep):
             self.attrs['frag_a'])
 
     def hexlify(self):
+        # TODO: add code here to resolve label references
+
         assert not self.contains_reference
         return self.assembler_ref.assemble_opcode(self)
 
+    def resolve(self, state):
+        # add code to expand arithmetic here
+        pass
 
-class SpecialOpcodeRep(Rep):
+
+class SpecialOpcodeRep(OpcodeRep):
     def __repr__(self):
         return "<SpecialOpcode: {} {}>".format(
             self.attrs['name'],
