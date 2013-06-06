@@ -1,1 +1,4 @@
 set b, 7
+
+:label
+    .DAT 0x0

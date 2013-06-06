@@ -1,2 +1,4 @@
 #!/bin/python
-from assembler import Assembler
+from .assembler import Assembler
+
+Assembler

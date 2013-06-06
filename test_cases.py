@@ -16,17 +16,17 @@ OPTIONS = {'stdlib_ilog': [['examples', 'misc', 'ilog.dasm'],
                                       'includes',
                                       'part1+part2.bin']],
            "SirCmpwn's_test_case": [['examples', 'misc', '.orgASM_test.dasm'],
-                           ['examples', 'misc', '.orgASM_test.bin']],
+                                    ['examples', 'misc', '.orgASM_test.bin']],
            "addition_test_case": [['examples', 'math', 'addition.dasm'],
-                           ['examples', 'math', 'addition.bin']],
+                                  ['examples', 'math', 'addition.bin']],
            "math_test_case": [['examples', 'math', 'basic_commands.dasm'],
-                           ['examples', 'math', 'basic_commands.bin']],
+                              ['examples', 'math', 'basic_commands.bin']],
            "sixteens_draw_test": [['examples', 'sixteens', 'draw.asm'],
                                   ['examples', 'sixteens', 'draw.bin']],
            "sixteens_quick_example": [['examples', 'sixteens', 'quick_example.asm'],
-                                  ['examples', 'sixteens', 'quick_example.bin']],
+                                      ['examples', 'sixteens', 'quick_example.bin']],
            "sixteens_refresh_test": [['examples', 'sixteens', 'refresh.asm'],
-                                  ['examples', 'sixteens', 'refresh.bin']],
+                                     ['examples', 'sixteens', 'refresh.bin']],
            "sixteens_vram_test": [['examples', 'sixteens', 'vram.asm'],
                                   ['examples', 'sixteens', 'vram.bin']]}
 
@@ -39,9 +39,8 @@ for test in OPTIONS.keys():
 
 INST = Assembler()
 #INST.debug_toggle = True #  debugging line. enable to know ALL the stuffs :D
-print 'This performs a number of test cases on the assembler :D'
-print "If you'll give me a moment, \
-i'll clean up the .bin files from previous tests :)\n"
+print('This performs a number of test cases on the assembler :D')
+print("If you'll give me a moment, i'll clean up the .bin files from previous tests :)")
 
 for test in OPTIONS.keys():
     try:
@@ -50,23 +49,22 @@ for test in OPTIONS.keys():
         pass  # ok, that file doesnt exist
 
 TEST_NUM = 0
-print '\n\n0. All tests'
+print('\n\n0. All tests')
 for test in OPTIONS.keys():
     TEST_NUM += 1
-    print str(TEST_NUM) + '.',
-    print test.replace('_', ' ')
+    print(str(TEST_NUM) + '.', test.replace('_', ' '))
 
-print  # range(len(OPTIONS)+1)
-TEST_NUM = raw_input('Please enter a number: ')
+print()
+TEST_NUM = input('Please enter a number: ')
 POSSIBLES = [str(x) for x in range(len(OPTIONS) + 1)]
 while TEST_NUM not in POSSIBLES:
-    TEST_NUM = raw_input('Please enter a number: ')
+    TEST_NUM = input('Please enter a number: ')
     if TEST_NUM not in POSSIBLES:
-        print 'Sorry, please try again\n'
+        print('Sorry, please try again\n')
 
 TEST_NUM = int(TEST_NUM)
 
-print
+print()
 
 #print OPTIONS[OPTIONS.keys()[TEST_NUM-1]]#[0],\
 #OPTIONS[OPTIONS.keys()[TEST_NUM]][1])
@@ -82,4 +80,4 @@ else:
         OUTPUT_FILENAME = OPTIONS[OPTIONS.keys()[TEST_NUM - 1]][1]
         INST.load(INPUT_FILENAME, OUTPUT_FILENAME)
 
-print 'Test done'
+print('Test done')

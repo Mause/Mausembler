@@ -6,3 +6,5 @@ add x, b
 add x, c
 
 div x, 3
+
+hwi i
