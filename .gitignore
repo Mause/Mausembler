@@ -1,0 +1,3 @@
+*.pyc
+some_explanations.txt
+__pycache__/

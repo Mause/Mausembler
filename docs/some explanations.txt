@@ -1,0 +1,21 @@
+<startling> Lord_DeathMatch: set a, 0x30 compiles the first word to "0x1 0x0 0x1f", which means "set a to the next word"
+<startling> Lord_DeathMatch: and then 0x30 goes in the next word
+<Lord_DeathMatch> can you explain what each individual part of "0x1 0x0 0x1f" does?
+<startling> Lord_DeathMatch: unfortunately this is kind of hard to mentally unpack from hex, especially because they're odd-sized and backwards
+<Lord_DeathMatch> ?
+<Lord_DeathMatch> ^
+
+<startling> Lord_DeathMatch: 0x0 is "set", 0x1 is "the register A", and "0x1f" is "the next word"
+<startling> er
+<Lord_DeathMatch> righteo
+
+<startling> that's backwards, "0x1" is set, 0x0 is "the register A"
+<Lord_DeathMatch> ah, righteo
+
+
+
+>> set a, 0x30
+   7c01 0030 -> A: 0030
+>> set a, 30
+   f801 -> A: 001e
+
