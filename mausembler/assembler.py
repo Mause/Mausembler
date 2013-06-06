@@ -114,7 +114,6 @@ class Assembler(object):
 
         # resolve various specials
         assembly = self.resolve(assembly, DirectiveRep)
-
         assembly = self.resolve(assembly, LabelRep)
 
         return assembly
@@ -136,14 +135,23 @@ class Assembler(object):
 
             changes_this_loop = 0
             for index, rep in enumerate(assembly):
+                # iterate through the opcodes
+
+                # we are doing stuff in a certain order,
+                # so we make sure we are resolving the right types
                 if issubclass(rep.__class__, of_class):
                     self.state['assembly'] = assembly
                     result = rep.resolve(self.state)
+
+                    # if something can be resolved
                     if result[0]:
+                        # if this opcode resolves to new assembly
                         if result[0] == 'new_assembly':
                             for sub_rep in self._do_assemble(result[1]):
                                 assembly.insert(index + 1, sub_rep)
                                 changes_this_loop += 1
+
+                        # remove the resolved opcode
                         assembly.pop(index)
 
             if changes_this_loop == 0:
