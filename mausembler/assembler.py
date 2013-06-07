@@ -5,9 +5,9 @@ import re
 import logging
 import binascii
 from io import StringIO
-from pprint import pprint
+# from pprint import pprint
 
-# from .custom_errors import DuplicateLabelError
+from .custom_errors import DuplicateLabelError
 from .representations import (
     LabelRep,
     CommentRep,
@@ -62,10 +62,9 @@ class Assembler(object):
             'PC++': 0x1f,
         }
 
-        self.labels = {}
+        self.labels = set()  # {}
 
-        self.line_number = 0
-        self.log_file = ''
+        # self.line_number = 0
         self.endianness = 'big'
         self.overwrite = True
 
@@ -101,10 +100,10 @@ class Assembler(object):
 
     def assemble(self, assembly):
         assembly = self._do_assemble(assembly)
-        pprint(assembly)
+        # pprint(assembly)
 
         byte_code = self.resolve_machine_code_hex(assembly)
-        print('bytecode;', byte_code)
+        # print('bytecode;', byte_code)
         # packed_byte_code = self.pack_byte_code(byte_code)
         # return byte_code
 
@@ -157,7 +156,8 @@ class Assembler(object):
             if changes_this_loop == 0:
                 changes_to_resolve = False
 
-        del self.state['assembly']
+        if 'assembly' in self.state:
+            del self.state['assembly']
         return assembly
 
     def parse(self, assembly):
@@ -212,6 +212,10 @@ class Assembler(object):
 
     def handle_label(self, match):
         name = match.groupdict()['name'].rstrip()
+        if name in self.labels:
+            raise DuplicateLabelError('{} found twice'.format(name))
+        else:
+            self.labels.add(name)
         return LabelRep(
             assembler_ref=self,
             name=name)
@@ -242,6 +246,7 @@ class Assembler(object):
 
         self.debug('Opcode: {}'.format(opcode))
 
+        # In bits (in LSB-0 format), a basic instruction has the format: aaaaaabbbbbooooo
         # will take the next word literally, unless otherwise specified
         if opcode.attrs['name'] in self.basic_opcodes.keys():
             self.debug('perform {} operation with {} and {}'.format(
@@ -264,17 +269,17 @@ class Assembler(object):
 
         #     word = 0
 
-        #     # output_data = [part_b_primary] + output_data
-        #     output_data[0] = int(output_data[0]) << 26
-        #     output_data[1] = int(output_data[1]) << 20
-        #     output_data[2] = int(output_data[2]) << 16
-        #     output_data[3] = int(output_data[3])
+            output_data = []
+            output_data[0] = int(output_data[0]) << 26
+            output_data[1] = int(output_data[1]) << 20
+            output_data[2] = int(output_data[2]) << 16
+            output_data[3] = int(output_data[3])
 
         #     print('output_data:', [hex(q) for q in output_data])
 
-        #     final = (output_data[0] ^ output_data[1])
-        #     final = (final ^ output_data[2])
-        #     final = (final ^ output_data[3])
+            final = (output_data[0] ^ output_data[1])
+            final = (final ^ output_data[2])
+            final = (final ^ output_data[3])
         #     final = hex(final)
         #     print('type:', type(final))
         #     final = final.strip('L')
@@ -284,6 +289,8 @@ class Assembler(object):
         #     else:
         #         print('final:', hex(int(final)))
 
+        # Special opcodes always have their lower five bits unset, have one value and a
+        # five bit opcode. In binary, they have the format: aaaaaaooooo00000
         # return data_word
 
     def resolve_frag(self, frag):

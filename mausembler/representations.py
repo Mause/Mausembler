@@ -64,7 +64,9 @@ class BasicOpcodeRep(OpcodeRep):
         # TODO: add code here to resolve label references
 
         assert not self.contains_reference
-        return self.assembler_ref.assemble_opcode(self)
+        h = self.assembler_ref.assemble_opcode(self)
+        assert h, h
+        return h
 
     def resolve(self, state):
         # add code to expand arithmetic here
