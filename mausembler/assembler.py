@@ -2,9 +2,8 @@
 # This is a Quick & Dirty assembler :P
 "This is a Quick & Dirty assembler :P"
 import re
+import struct
 import logging
-import binascii
-from io import StringIO
 from pprint import pprint
 
 from .definitions import *
@@ -190,8 +189,14 @@ class Assembler(object):
             content=match.groupdict()['content'])
 
     def hex_to_file(self, hex_list):
-        h = ''.join(hex(s)[2:] for s in hex_list)
-        return binascii.a2b_hex(h).decode('ascii')
+        fmt = '{}L'.format(len(hex_list))
+        if self.endianness == 'little':
+            fmt = '<' + fmt
+        else:
+            fmt = '>' + fmt
+
+        return struct.pack(fmt, *hex_list)
+
 
 '''
 Report mausembler bugs to <https://github.com/Mause/Mausembler/issues>

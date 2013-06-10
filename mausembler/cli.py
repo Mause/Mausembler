@@ -36,7 +36,7 @@ def main():
         byte_code = asm.hex_to_file(assembly)
 
         with open(output_filename, 'wb') as fh:
-            fh.write(byte_code.encode('ascii'))
+            fh.write(byte_code)
 
 
 if __name__ == '__main__':
