@@ -33,8 +33,10 @@ def main():
             assembly = file_handle.readlines()
 
         assembly = asm.assemble(assembly)
+        byte_code = asm.hex_to_file(assembly)
 
-        output_filename
+        with open(output_filename, 'wb') as fh:
+            fh.write(byte_code.encode('ascii'))
 
 
 if __name__ == '__main__':

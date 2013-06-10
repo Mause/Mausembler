@@ -1,5 +1,8 @@
 import os
 import re
+import logging
+
+from .definitions import basic_opcodes, values
 
 
 class ReferenceRep(object):
@@ -48,14 +51,106 @@ class LabelRep(Rep):
 
 
 class OpcodeRep(Rep):
-    pass
+    REF_RE = re.compile(r'\[(?P<ref_content>.*)\]')
+    debug_toggle = True
+
+    def debug(self, data):
+        "Simple debug function"
+        if self.debug_toggle:
+            print(data)
+        logging.info(data)
+
+    def resolve_frag(self, frag):
+        if frag[0:2] == '0b':
+            frag = int(frag, 2)
+        elif frag[0:2] == '0x':
+            frag = int(frag, 16)
+
+        elif frag.upper() in values:
+            frag = values[frag.upper()]
+
+        return frag
+
+    def assemble_opcode(self, opcode):
+        "Does the actual parsing and assembling"
+
+        # hex( (0x1f << 10) ^ (0x0 << 4) ^ 0x1 )
+        # returns 0x7c01
+        # sample code as supplied by startling
+
+        # hex(0x7c<<24 ^ 0x2<<20 ^ 0x1<<16 ^ 0x1)
+        # returns 0x7c11f888
+        # my own (revised) reference code
+
+        self.debug('Opcode: {}'.format(opcode))
+
+        # In bits (in LSB-0 format), a basic instruction has the format:
+            # aaaaaabbbbbooooo
+        # will take the next word literally, unless otherwise specified
+        if opcode.attrs['name'] in basic_opcodes.keys():
+            self.debug('perform {} operation with {} and {}'.format(
+                opcode.attrs['name'],
+                opcode.attrs['frag_b'],
+                opcode.attrs['frag_a']))
+
+            print('opcode:', opcode)
+            assert opcode.attrs['name'] in basic_opcodes
+            opcode_val = basic_opcodes[opcode.attrs['name']]
+
+            opcode_frag_b = opcode.attrs['frag_b']
+            opcode_frag_b = self.resolve_frag(opcode_frag_b)
+
+            opcode_frag_a = opcode.attrs['frag_a']
+            opcode_frag_a = self.resolve_frag(opcode_frag_a)
+
+            # print(
+            #     opcode_val,
+            #     opcode_frag_b,
+            #     opcode_frag_a)
+
+            # print(opcode_val, type(opcode_val))
+            # opcode_val = int(opcode_val, 16)
+            # opcode_frag_b = int(opcode_frag_b, 16)
+            # opcode_frag_a = int(opcode_frag_a, 16)
+
+            # print(
+            #     hex(opcode_val),
+            #     hex(opcode_frag_b),
+            #     hex(opcode_frag_a))
+
+            output_data = [0x1f, opcode_val, opcode_frag_b, opcode_frag_a]
+            output_data[0] = int(output_data[0]) << 26
+            output_data[1] = int(output_data[1]) << 20
+            output_data[2] = int(output_data[2]) << 16
+            output_data[3] = int(output_data[3])
+
+        #     print('output_data:', [hex(q) for q in output_data])
+
+            final = (output_data[0] ^ output_data[1])
+            final = (final ^ output_data[2])
+            final = (final ^ output_data[3])
+            print('final:', hex(final))
+            # final = hex(final)
+        #     print('type:', type(final))
+        #     final = final.strip('L')
+
+        #     if self.strd(final):
+        #         print('final:', hex(int(final, 16)))
+        #     else:
+        #         print('final:', hex(int(final)))
+
+        # Special opcodes always have their lower five bits unset,
+        # have one value and a five bit opcode.
+        # In binary, they have the format: aaaaaaooooo00000
+
+        return final
 
 
 class BasicOpcodeRep(OpcodeRep):
     contains_reference = False
 
     def __repr__(self):
-        return "<BasicOpcope: {} {} {}>".format(
+        return "<BasicOpcobe: {} {} {}>".format(
             self.attrs['name'],
             self.attrs['frag_b'],
             self.attrs['frag_a'])
@@ -63,13 +158,17 @@ class BasicOpcodeRep(OpcodeRep):
     def hexlify(self):
         # TODO: add code here to resolve label references
 
+        # if self.REF_RE.match(self.frag_a):
+        #     if re.match(self.frag_a)
+
+        # self.assembler_ref
+
         assert not self.contains_reference
-        h = self.assembler_ref.assemble_opcode(self)
+        h = self.assemble_opcode(self)
         assert h, h
         return h
 
     def resolve(self, state):
-        # add code to expand arithmetic here
         pass
 
 
