@@ -189,6 +189,10 @@ class Assembler(object):
             content=match.groupdict()['content'])
 
     def hex_to_file(self, hex_list):
+        """
+        Outputs hex to file
+        used http://stackoverflow.com/a/3855178/1433288 for reference
+        """
         fmt = '{}L'.format(len(hex_list))
         if self.endianness == 'little':
             fmt = '<' + fmt
