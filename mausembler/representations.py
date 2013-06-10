@@ -93,7 +93,6 @@ class OpcodeRep(Rep):
                 opcode.attrs['frag_b'],
                 opcode.attrs['frag_a']))
 
-            print('opcode:', opcode)
             assert opcode.attrs['name'] in basic_opcodes
             opcode_val = basic_opcodes[opcode.attrs['name']]
 
@@ -103,41 +102,19 @@ class OpcodeRep(Rep):
             opcode_frag_a = opcode.attrs['frag_a']
             opcode_frag_a = self.resolve_frag(opcode_frag_a)
 
-            # print(
-            #     opcode_val,
-            #     opcode_frag_b,
-            #     opcode_frag_a)
-
-            # print(opcode_val, type(opcode_val))
-            # opcode_val = int(opcode_val, 16)
-            # opcode_frag_b = int(opcode_frag_b, 16)
-            # opcode_frag_a = int(opcode_frag_a, 16)
-
-            # print(
-            #     hex(opcode_val),
-            #     hex(opcode_frag_b),
-            #     hex(opcode_frag_a))
-
             output_data = [0x1f, opcode_val, opcode_frag_b, opcode_frag_a]
             output_data[0] = int(output_data[0]) << 26
             output_data[1] = int(output_data[1]) << 20
             output_data[2] = int(output_data[2]) << 16
             output_data[3] = int(output_data[3])
 
-        #     print('output_data:', [hex(q) for q in output_data])
-
             final = (output_data[0] ^ output_data[1])
             final = (final ^ output_data[2])
             final = (final ^ output_data[3])
             print('final:', hex(final))
-            # final = hex(final)
-        #     print('type:', type(final))
-        #     final = final.strip('L')
 
-        #     if self.strd(final):
-        #         print('final:', hex(int(final, 16)))
-        #     else:
-        #         print('final:', hex(int(final)))
+        else:
+            raise NotImplementedError()
 
         # Special opcodes always have their lower five bits unset,
         # have one value and a five bit opcode.
