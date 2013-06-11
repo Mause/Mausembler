@@ -200,9 +200,3 @@ class Assembler(object):
             fmt = '>' + fmt
 
         return struct.pack(fmt, *hex_list)
-
-
-'''
-Report mausembler bugs to <https://github.com/Mause/Mausembler/issues>
-Email me: me@mause.me
-'''

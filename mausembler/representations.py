@@ -2,7 +2,7 @@ import os
 import re
 import logging
 
-from .definitions import basic_opcodes, values
+from .definitions import basic_opcodes, values, special_opcodes
 
 
 class ReferenceRep(object):
@@ -84,23 +84,28 @@ class OpcodeRep(Rep):
 
         self.debug('Opcode: {}'.format(opcode))
 
+        assert (
+            opcode.attrs['name'] in basic_opcodes or
+            opcode.attrs['name'] in special_opcodes
+        )
+
         # In bits (in LSB-0 format), a basic instruction has the format:
             # aaaaaabbbbbooooo
         # will take the next word literally, unless otherwise specified
-        if opcode.attrs['name'] in basic_opcodes.keys():
+
+        opcode_frag_a = opcode.attrs['frag_a']
+        opcode_frag_a = self.resolve_frag(opcode_frag_a)
+
+        if opcode.attrs['name'] in basic_opcodes:
+            opcode_val = basic_opcodes[opcode.attrs['name']]
+
             self.debug('perform {} operation with {} and {}'.format(
                 opcode.attrs['name'],
                 opcode.attrs['frag_b'],
                 opcode.attrs['frag_a']))
 
-            assert opcode.attrs['name'] in basic_opcodes
-            opcode_val = basic_opcodes[opcode.attrs['name']]
-
             opcode_frag_b = opcode.attrs['frag_b']
             opcode_frag_b = self.resolve_frag(opcode_frag_b)
-
-            opcode_frag_a = opcode.attrs['frag_a']
-            opcode_frag_a = self.resolve_frag(opcode_frag_a)
 
             output_data = [0x1f, opcode_val, opcode_frag_b, opcode_frag_a]
             output_data[0] = int(output_data[0]) << 26
@@ -113,8 +118,21 @@ class OpcodeRep(Rep):
             final = (final ^ output_data[3])
             print('final:', hex(final))
 
-        else:
-            raise NotImplementedError()
+        elif opcode.attrs['name'] in special_opcodes:
+            opcode_val = special_opcodes[opcode.attrs['name']]
+
+            self.debug('perform {} operation with {}'.format(
+                opcode.attrs['name'],
+                opcode.attrs['frag_a']))
+
+            output_data = [0x1f, opcode_val, opcode_frag_a]
+            output_data[0] = int(output_data[0]) << 26
+            output_data[1] = int(output_data[1]) << 20
+            output_data[2] = int(output_data[2]) << 16
+
+            final = (output_data[0] ^ output_data[1])
+            final = (final ^ output_data[2])
+            print('final:', hex(final))
 
         # Special opcodes always have their lower five bits unset,
         # have one value and a five bit opcode.
@@ -124,8 +142,6 @@ class OpcodeRep(Rep):
 
 
 class BasicOpcodeRep(OpcodeRep):
-    contains_reference = False
-
     def __repr__(self):
         return "<BasicOpcobe: {} {} {}>".format(
             self.attrs['name'],
@@ -140,7 +156,6 @@ class BasicOpcodeRep(OpcodeRep):
 
         # self.assembler_ref
 
-        assert not self.contains_reference
         h = self.assemble_opcode(self)
         assert h, h
         return h
@@ -154,6 +169,18 @@ class SpecialOpcodeRep(OpcodeRep):
         return "<SpecialOpcode: {} {}>".format(
             self.attrs['name'],
             self.attrs['frag_a'])
+
+    def hexlify(self):
+        # TODO: add code here to resolve label references
+
+        # if self.REF_RE.match(self.frag_a):
+        #     if re.match(self.frag_a)
+
+        # self.assembler_ref
+
+        h = self.assemble_opcode(self)
+        assert h, h
+        return h
 
 
 class DirectiveRep(Rep):
