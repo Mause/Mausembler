@@ -32,8 +32,7 @@ def main():
         with open(input_filename) as file_handle:
             assembly = file_handle.readlines()
 
-        assembly = asm.assemble(assembly)
-        byte_code = asm.hex_to_file(assembly)
+        byte_code = asm.assemble(assembly)
 
         with open(output_filename, 'wb') as fh:
             fh.write(byte_code)

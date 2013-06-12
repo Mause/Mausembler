@@ -22,7 +22,7 @@ from .representations import (
 class Assembler(object):
     "Does the assembling stuff :D"
     def __init__(self, state=None):
-        self.labels = set()
+        self.labels = {}
 
         # self.line_number = 0
         self.endianness = 'big'
@@ -39,8 +39,8 @@ class Assembler(object):
 
         self.state = {} if not state else state
 
-        BASIC_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<B>(?:0x)?\w+), (?P<A>\w+)\s*(?:;.*)?")
-        SPECI_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<A>(?:0x)?\w+)\s*(?:;.*)?")
+        BASIC_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<B>(?:0x)?\w+),? (?P<A>\w+)\s*(?:;.*)?")
+        SPECI_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<A>(?:0x)?\w+)'           '\s*(?:;.*)?")
         LABEL_RE = re.compile(r"\s*:(?P<name>[a-zA-Z0-9]+)\s*(?:;.*)?")
         DIRECTIVE_RE = re.compile(r"\s*\.(?P<name>[a-zA-Z0-9]+)\s*(?P<extra_params>.*)\s*(?:;.*)?")
         COMMENT_RE = re.compile(r"\s*;(?P<content>.*)")
@@ -61,13 +61,12 @@ class Assembler(object):
 
     def assemble(self, assembly):
         assembly = self._do_assemble(assembly)
-        # pprint(assembly)
 
         byte_code = self.resolve_machine_code_hex(assembly)
         pprint(list(map(hex, byte_code)))
 
-        # packed_byte_code = self.pack_byte_code(byte_code)
-        return byte_code
+        packed_byte_code = self.pack_byte_code(byte_code)
+        return packed_byte_code
 
     def _do_assemble(self, assembly):
         # format the assembly into a usuable format
@@ -177,7 +176,7 @@ class Assembler(object):
         if name in self.labels:
             raise DuplicateLabelError('{} found twice'.format(name))
         else:
-            self.labels.add(name)
+            self.labels[name] = None
 
         return LabelRep(
             assembler_ref=self,
@@ -188,7 +187,7 @@ class Assembler(object):
             assembler_ref=self,
             content=match.groupdict()['content'])
 
-    def hex_to_file(self, hex_list):
+    def pack_byte_code(self, hex_list):
         """
         Outputs hex to file
         used http://stackoverflow.com/a/3855178/1433288 for reference

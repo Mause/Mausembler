@@ -9,13 +9,13 @@ class ReferenceRep(object):
     pass
 
 
-class Expression(object):
-    def __init__(self, expr):
-        self.HEX_RE = re.compile(r'(0x\d+)')
-        self.BIN_RE = re.compile(r'(0b[01]+)')
+# class Expression(object):
+#     def __init__(self, expr):
+#         self.HEX_RE = re.compile(r'(0x\d+)')
+#         self.BIN_RE = re.compile(r'(0b[01]+)')
 
-    def resolve(self):
-        return 'new_assembly'
+#     def resolve(self):
+#         return 'new_assembly'
 
 
 class Rep(object):
@@ -40,6 +40,9 @@ class Rep(object):
 class CommentRep(Rep):
     def __repr__(self):
         return "<Comment: {}>".format(self.attrs['content'])
+
+    def hexlify(self):
+        return []
 
 
 class LabelRep(Rep):
@@ -96,7 +99,7 @@ class OpcodeRep(Rep):
         opcode_frag_a = opcode.attrs['frag_a']
         opcode_frag_a = self.resolve_frag(opcode_frag_a)
 
-        if opcode.attrs['name'] in basic_opcodes:
+        if isinstance(opcode, BasicOpcodeRep):
             opcode_val = basic_opcodes[opcode.attrs['name']]
 
             self.debug('perform {} operation with {} and {}'.format(
@@ -106,19 +109,24 @@ class OpcodeRep(Rep):
 
             opcode_frag_b = opcode.attrs['frag_b']
             opcode_frag_b = self.resolve_frag(opcode_frag_b)
+            print(opcode_frag_b)
 
             output_data = [0x1f, opcode_val, opcode_frag_b, opcode_frag_a]
+            print('output data;', hex(opcode_val))
             output_data[0] = int(output_data[0]) << 26
-            output_data[1] = int(output_data[1]) << 20
+            # output_data[1] = int(output_data[1]) << 18
+            output_data[1] = int(output_data[1]) << 16
             output_data[2] = int(output_data[2]) << 16
             output_data[3] = int(output_data[3])
+
+            print('output data;', list(map(hex, output_data)))
 
             final = (output_data[0] ^ output_data[1])
             final = (final ^ output_data[2])
             final = (final ^ output_data[3])
             print('final:', hex(final))
 
-        elif opcode.attrs['name'] in special_opcodes:
+        elif isinstance(opcode, SpecialOpcodeRep):
             opcode_val = special_opcodes[opcode.attrs['name']]
 
             self.debug('perform {} operation with {}'.format(
@@ -133,6 +141,8 @@ class OpcodeRep(Rep):
             final = (output_data[0] ^ output_data[1])
             final = (final ^ output_data[2])
             print('final:', hex(final))
+        else:
+            raise Exception(opcode)
 
         # Special opcodes always have their lower five bits unset,
         # have one value and a five bit opcode.
@@ -143,7 +153,7 @@ class OpcodeRep(Rep):
 
 class BasicOpcodeRep(OpcodeRep):
     def __repr__(self):
-        return "<BasicOpcobe: {} {} {}>".format(
+        return "<BasicOpcode: {} {} {}>".format(
             self.attrs['name'],
             self.attrs['frag_b'],
             self.attrs['frag_a'])
