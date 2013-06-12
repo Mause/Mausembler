@@ -8,8 +8,7 @@ def main():
     parser.add_argument("input_filename")
     parser.add_argument("output_filename")
     parser.add_argument("--credits", help="prints credits and exits")
-    parser.add_argument("--big-endian", help="enables big endian")
-    parser.add_argument("--little-endian", help="enables little endian")
+    parser.add_argument("--big-endian", help="enables big endian. defaults to little")
     parser.add_argument(
         "-d", "--debug", help="enable debug mode", action="store_true")
     args = parser.parse_args()
