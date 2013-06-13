@@ -21,17 +21,18 @@ def main():
         input_filename = os.path.abspath(args.input_filename)
         output_filename = os.path.abspath(args.output_filename)
 
-        asm = Assembler(
-            {'input_directory': os.path.abspath(
-                os.path.dirname(input_filename))})
+        state = {
+            'input_directory': os.path.abspath(os.path.dirname(input_filename))
+        }
+        asm = Assembler(state)
 
         asm.debug_toggle = args.debug
         asm.endian = 'big' if args.big_endian else 'little'
 
         with open(input_filename) as file_handle:
-            assembly = file_handle.readlines()
+            raw_assembly = file_handle.readlines()
 
-        byte_code = asm.assemble(assembly)
+        byte_code = asm.assemble(raw_assembly)
 
         with open(output_filename, 'wb') as fh:
             fh.write(byte_code)

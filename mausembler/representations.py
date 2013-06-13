@@ -24,9 +24,9 @@ class Rep(object):
         self.attrs = kwargs
 
     def size(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.__class__)
 
-    def hexlify(self):
+    def hexlify(self, state):
         # this doesn't strictly have to return anything
         return None
 
@@ -41,7 +41,7 @@ class CommentRep(Rep):
     def __repr__(self):
         return "<Comment: {}>".format(self.attrs['content'])
 
-    def hexlify(self):
+    def hexlify(self, state):
         return []
 
 
@@ -55,6 +55,7 @@ class LabelRep(Rep):
 
 class OpcodeRep(Rep):
     REF_RE = re.compile(r'\[(?P<ref_content>.*)\]')
+    LITERAL_RE = re.compile(r'(?:0x|0b)?\d+')
     debug_toggle = True
 
     def debug(self, data):
@@ -74,7 +75,7 @@ class OpcodeRep(Rep):
 
         return frag
 
-    def assemble_opcode(self, opcode):
+    def assemble_opcode(self):
         "Does the actual parsing and assembling"
 
         # hex( (0x1f << 10) ^ (0x0 << 4) ^ 0x1 )
@@ -85,70 +86,122 @@ class OpcodeRep(Rep):
         # returns 0x7c11f888
         # my own (revised) reference code
 
-        self.debug('Opcode: {}'.format(opcode))
-
         assert (
-            opcode.attrs['name'] in basic_opcodes or
-            opcode.attrs['name'] in special_opcodes
+            self.attrs['name'] in basic_opcodes or
+            self.attrs['name'] in special_opcodes
         )
 
-        # In bits (in LSB-0 format), a basic instruction has the format:
-            # aaaaaabbbbbooooo
-        # will take the next word literally, unless otherwise specified
+        opcode_frag_a = self.attrs['frag_a']
 
-        opcode_frag_a = opcode.attrs['frag_a']
-        opcode_frag_a = self.resolve_frag(opcode_frag_a)
-
-        if isinstance(opcode, BasicOpcodeRep):
-            opcode_val = basic_opcodes[opcode.attrs['name']]
+        if isinstance(self, BasicOpcodeRep):
+            # In bits (in LSB-0 format), a basic instruction has the format:
+                # aaaaaabbbbbooooo
+            # will take the next word literally, unless otherwise specified
+            opcode_val = basic_opcodes[self.attrs['name']]
 
             self.debug('perform {} operation with {} and {}'.format(
-                opcode.attrs['name'],
-                opcode.attrs['frag_b'],
-                opcode.attrs['frag_a']))
+                self.attrs['name'],
+                hex(self.attrs['frag_b']),
+                hex(self.attrs['frag_a'])))
 
-            opcode_frag_b = opcode.attrs['frag_b']
-            opcode_frag_b = self.resolve_frag(opcode_frag_b)
-            print(opcode_frag_b)
+            opcode_frag_b = self.attrs['frag_b']
 
-            output_data = [0x1f, opcode_val, opcode_frag_b, opcode_frag_a]
-            print('output data;', hex(opcode_val))
-            output_data[0] = int(output_data[0]) << 26
-            # output_data[1] = int(output_data[1]) << 18
-            output_data[1] = int(output_data[1]) << 16
-            output_data[2] = int(output_data[2]) << 16
-            output_data[3] = int(output_data[3])
+            final = self._assemble_opcode(
+                opcode_val,
+                opcode_frag_a,
+                opcode_frag_b)
 
-            print('output data;', list(map(hex, output_data)))
-
-            final = (output_data[0] ^ output_data[1])
-            final = (final ^ output_data[2])
-            final = (final ^ output_data[3])
-            print('final:', hex(final))
-
-        elif isinstance(opcode, SpecialOpcodeRep):
-            opcode_val = special_opcodes[opcode.attrs['name']]
+        elif isinstance(self, SpecialOpcodeRep):
+            # Special opcodes always have their lower five bits unset,
+            # have one value and a five bit opcode.
+            # In binary, they have the format: aaaaaaooooo00000
+            opcode_val = special_opcodes[self.attrs['name']]
 
             self.debug('perform {} operation with {}'.format(
-                opcode.attrs['name'],
-                opcode.attrs['frag_a']))
+                self.attrs['name'],
+                hex(self.attrs['frag_a'])))
 
-            output_data = [0x1f, opcode_val, opcode_frag_a]
-            output_data[0] = int(output_data[0]) << 26
-            output_data[1] = int(output_data[1]) << 20
-            output_data[2] = int(output_data[2]) << 16
-
-            final = (output_data[0] ^ output_data[1])
-            final = (final ^ output_data[2])
-            print('final:', hex(final))
+            final = self._assemble_opcode(
+                opcode_val,
+                opcode_frag_a)
         else:
-            raise Exception(opcode)
+            raise Exception(self)
 
-        # Special opcodes always have their lower five bits unset,
-        # have one value and a five bit opcode.
-        # In binary, they have the format: aaaaaaooooo00000
+        # print('final:', hex(final))
 
         return final
+
+    def _assemble_opcode(self, opcode_val, opcode_frag_a, opcode_frag_b=None):
+        output_data = [0x1f, opcode_val]
+        if opcode_frag_b:
+            output_data += [opcode_frag_b, opcode_frag_a]
+        else:
+            output_data += [opcode_frag_a]
+
+        output_data[0] = int(output_data[0]) << 26
+        # output_data[1] = int(output_data[1]) << 18
+        output_data[1] = int(output_data[1]) << 16
+        output_data[2] = int(output_data[2]) << 16
+
+        final = (output_data[0] ^ output_data[1])
+        final = (final ^ output_data[2])
+
+        if opcode_frag_b:
+            final = (final ^ output_data[3])
+
+        return final
+
+    def resolve_expressions(self):
+        if 'frag_a' in self.attrs:
+            self.attrs['frag_a'] = self.resolve_single_expression(self.attrs['frag_a'])
+            assert self.attrs['frag_a'] is not None
+
+        if 'frag_b' in self.attrs:
+            self.attrs['frag_b'] = self.resolve_single_expression(self.attrs['frag_b'])
+            assert self.attrs['frag_b'] is not None
+
+    def resolve_single_expression(self, expression):
+        # try and resolve it normally
+        expression = self.resolve_frag(expression)
+        if type(expression) == int:
+            # assert expression, 'bad returned frag'
+            return expression
+
+        if not self.LITERAL_RE.match(expression):
+            # print('not literal:', expression)
+
+            match = self.REF_RE.match(expression)
+            if match:
+                print('is reference:', match.groups())
+
+            else:
+                # print('is label:', expression)
+                expression = self.resolve_label(expression)
+                assert expression
+
+        return expression
+
+    def resolve_label(self, label_name):
+        if label_name not in self.assembler_ref.labels:
+            raise Exception('No such label: {}'.format(label_name))
+
+        if self.assembler_ref.labels[label_name] is not None:
+            return self.assembler_ref.labels[label_name]
+        else:
+            # this is where we determine the address for the label
+            address = 0x0
+            for opcode in self.state['assembly']:
+                if isinstance(opcode, LabelRep):
+                    if opcode.attrs['name'] == label_name:
+                        break
+                else:
+                    address += opcode.size()
+            else:
+                raise Exception('label not found?! wut?!')
+
+            self.assembler_ref.labels[label_name] = address
+
+        return address
 
 
 class BasicOpcodeRep(OpcodeRep):
@@ -158,17 +211,20 @@ class BasicOpcodeRep(OpcodeRep):
             self.attrs['frag_b'],
             self.attrs['frag_a'])
 
-    def hexlify(self):
+    def hexlify(self, state):
+        self.state = state
         # TODO: add code here to resolve label references
 
-        # if self.REF_RE.match(self.frag_a):
-        #     if re.match(self.frag_a)
+        self.resolve_expressions()
 
-        # self.assembler_ref
-
-        h = self.assemble_opcode(self)
+        h = self.assemble_opcode()
         assert h, h
+
+        del self.state
         return h
+
+    def size(self):
+        return 2
 
     def resolve(self, state):
         pass
@@ -180,13 +236,10 @@ class SpecialOpcodeRep(OpcodeRep):
             self.attrs['name'],
             self.attrs['frag_a'])
 
-    def hexlify(self):
+    def hexlify(self, state):
         # TODO: add code here to resolve label references
 
-        # if self.REF_RE.match(self.frag_a):
-        #     if re.match(self.frag_a)
-
-        # self.assembler_ref
+        self.resolve_expressions()
 
         h = self.assemble_opcode(self)
         assert h, h
@@ -229,7 +282,7 @@ class DataLiteralRep(DirectiveRep):
     def size(self):
         raise NotImplementedError()
 
-    def hexlify(self):
+    def hexlify(self, state):
         content = self.attrs['content']
 
         if content.rstrip()[0:2] == '0x':

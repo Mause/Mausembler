@@ -62,8 +62,9 @@ class Assembler(object):
     def assemble(self, assembly):
         assembly = self._do_assemble(assembly)
 
+        self.state['assembly'] = assembly
         byte_code = self.resolve_machine_code_hex(assembly)
-        pprint(list(map(hex, byte_code)))
+        del self.state['assembly']
 
         packed_byte_code = self.pack_byte_code(byte_code)
         return packed_byte_code
@@ -81,9 +82,12 @@ class Assembler(object):
     def resolve_machine_code_hex(self, assembly):
         byte_code = []
         for opcode in assembly:
-            hexed = opcode.hexlify()
-            assert hexed is not None, (hexed, opcode)
-            byte_code.append(hexed)
+            hexed = opcode.hexlify(self.state)
+
+            if not isinstance(opcode, LabelRep):
+                assert hexed is not None, (hexed, opcode)
+                byte_code.append(hexed)
+
         return byte_code
 
     def resolve(self, assembly, of_class):
