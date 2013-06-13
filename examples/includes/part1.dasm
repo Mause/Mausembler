@@ -1,6 +1,6 @@
 .include part2.dasm
 
 
-set a, 9
+set a, 0x9
 
 set pc, label

@@ -39,8 +39,8 @@ class Assembler(object):
 
         self.state = {} if not state else state
 
-        BASIC_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<B>(?:0x)?\w+),? (?P<A>\w+)\s*(?:;.*)?")
-        SPECI_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<A>(?:0x)?\w+)'           '\s*(?:;.*)?")
+        BASIC_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<B>(?:0x|0b)?(?:\d+|\w+)),? (?P<A>(?:0x|0b)?(?:\d+|\w+))\s*(?:;.*)?")
+        SPECI_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<A>(?:0x|0b)?(?:\d+|\w+))'                              '\s*(?:;.*)?")
         LABEL_RE = re.compile(r"\s*:(?P<name>[a-zA-Z0-9]+)\s*(?:;.*)?")
         DIRECTIVE_RE = re.compile(r"\s*\.(?P<name>[a-zA-Z0-9]+)\s*(?P<extra_params>.*)\s*(?:;.*)?")
         COMMENT_RE = re.compile(r"\s*;(?P<content>.*)")
@@ -65,6 +65,7 @@ class Assembler(object):
         self.state['assembly'] = assembly
         byte_code = self.resolve_machine_code_hex(assembly)
         del self.state['assembly']
+        pprint(list(map(hex, byte_code)))
 
         packed_byte_code = self.pack_byte_code(byte_code)
         return packed_byte_code
@@ -84,7 +85,7 @@ class Assembler(object):
         for opcode in assembly:
             hexed = opcode.hexlify(self.state)
 
-            if not isinstance(opcode, LabelRep):
+            if not isinstance(opcode, LabelRep) and not isinstance(opcode, CommentRep):
                 assert hexed is not None, (hexed, opcode)
                 byte_code.append(hexed)
 

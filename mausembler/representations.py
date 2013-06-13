@@ -42,7 +42,7 @@ class CommentRep(Rep):
         return "<Comment: {}>".format(self.attrs['content'])
 
     def hexlify(self, state):
-        return []
+        return None
 
 
 class LabelRep(Rep):
@@ -99,10 +99,12 @@ class OpcodeRep(Rep):
             # will take the next word literally, unless otherwise specified
             opcode_val = basic_opcodes[self.attrs['name']]
 
-            self.debug('perform {} operation with {} and {}'.format(
-                self.attrs['name'],
-                hex(self.attrs['frag_b']),
-                hex(self.attrs['frag_a'])))
+            # print(self.attrs, list(map(type, self.attrs)))
+
+            # self.debug('perform {} operation with {} and {}'.format(
+            #     self.attrs['name'],
+            #     hex(self.attrs['frag_b']),
+            #     hex(self.attrs['frag_a'])))
 
             opcode_frag_b = self.attrs['frag_b']
 
@@ -138,13 +140,18 @@ class OpcodeRep(Rep):
         else:
             output_data += [opcode_frag_a]
 
-        output_data[0] = int(output_data[0]) << 26
-        # output_data[1] = int(output_data[1]) << 18
-        output_data[1] = int(output_data[1]) << 16
-        output_data[2] = int(output_data[2]) << 16
+        # output_data[0] = int(output_data[0]) << 26
+        # # output_data[1] = int(output_data[1]) << 18
+        # output_data[1] = int(output_data[1]) << 16
+        # output_data[2] = int(output_data[2]) << 16
 
-        final = (output_data[0] ^ output_data[1])
-        final = (final ^ output_data[2])
+        # final = (output_data[0] ^ output_data[1])
+        # final = (final ^ output_data[2])
+
+        final = (
+            int(output_data[0]) << 26 ^
+            int(output_data[1]) << 16 ^
+            int(output_data[2]) << 16)
 
         if opcode_frag_b:
             final = (final ^ output_data[3])

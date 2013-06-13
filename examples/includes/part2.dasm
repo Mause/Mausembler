@@ -1,4 +1,4 @@
-set b, 7
+set b, 0x7
 
 :label
     .DAT 0x0
