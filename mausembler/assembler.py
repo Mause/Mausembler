@@ -2,6 +2,7 @@
 # This is a Quick & Dirty assembler :P
 "This is a Quick & Dirty assembler :P"
 import re
+import sys
 import struct
 import logging
 # from pprint import pprint
@@ -20,26 +21,29 @@ from .representations import (
 
 class Assembler(object):
     "Does the assembling stuff :D"
-    def __init__(self, state=None):
+    def __init__(self, state=None, debug_toggle=None, endianness=None):
         self.labels = {}
 
-        # self.line_number = 0
-        self.endianness = 'big'
-        self.overwrite = True
-
-        self.debug_toggle = False
-
-        self.log_file = logging.getLogger('Mausembler')
-        hdlr = logging.FileHandler('Mausembler.log')
-        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-        hdlr.setFormatter(formatter)
-        self.log_file.addHandler(hdlr)
-        self.log_file.setLevel(logging.INFO)
-
+        self.debug_toggle = debug_toggle if debug_toggle is not None else False
+        self.endianness = endianness if endianness is not None else 'little'
         self.state = {} if not state else state
 
+        self.log_file = logging.getLogger('Mausembler')
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+
+        hdlr = logging.FileHandler('Mausembler.log')
+        hdlr.setFormatter(formatter)
+        self.log_file.addHandler(hdlr)
+
+        if debug_toggle:
+            stdout_hdlr = logging.StreamHandler(sys.stdout)
+            stdout_hdlr.setFormatter(formatter)
+            self.log_file.addHandler(stdout_hdlr)
+
+        self.log_file.setLevel(logging.INFO)
+
         BASIC_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<B>(?:0x|0b)?(?:\d+|\w+)),? (?P<A>(?:0x|0b)?(?:\d+|\w+))\s*(?:;.*)?")
-        SPECI_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<A>(?:0x|0b)?(?:\d+|\w+))'                              '\s*(?:;.*)?")
+        SPECI_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<A>(?:0x|0b)?(?:\d+|\w+))'                             '\s*(?:;.*)?")
         LABEL_RE = re.compile(r"\s*:(?P<name>[a-zA-Z0-9]+)\s*(?:;.*)?")
         DIRECTIVE_RE = re.compile(r"\s*\.(?P<name>[a-zA-Z0-9]+)\s*(?P<extra_params>.*)\s*(?:;.*)?")
         COMMENT_RE = re.compile(r"\s*;(?P<content>.*)")
@@ -52,22 +56,16 @@ class Assembler(object):
             (COMMENT_RE, self.handle_comment)
         ]
 
-    def debug(self, data):
-        "Simple debug function"
-        if self.debug_toggle:
-            print(data)
-        logging.info(data)
-
     def assemble(self, assembly):
-        self.debug('Parsing base file')
+        self.log_file.info('Parsing base file')
         assembly = self._do_assemble(assembly)
 
-        self.debug('Resolving parsed assembly into hex')
+        self.log_file.info('Resolving parsed assembly into hex')
         self.state['assembly'] = assembly
         byte_code = self.resolve_machine_code_hex(assembly)
         del self.state['assembly']
 
-        self.debug('Packing hex')
+        self.log_file.info('Packing hex')
         packed_byte_code = self.pack_byte_code(byte_code)
 
         return packed_byte_code
@@ -130,6 +128,7 @@ class Assembler(object):
 
     def parse(self, assembly):
         assembly = map(str.rstrip, assembly)
+        assembly = filter(bool, assembly)
 
         verified_assembly = []
         for line in assembly:

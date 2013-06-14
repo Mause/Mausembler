@@ -58,12 +58,6 @@ class OpcodeRep(Rep):
     LITERAL_RE = re.compile(r'(?:0x|0b)?\d+')
     debug_toggle = True
 
-    def debug(self, data):
-        "Simple debug function"
-        if self.debug_toggle:
-            print(data)
-        logging.info(data)
-
     def resolve_frag(self, frag):
         if frag[0:2] == '0b':
             frag = int(frag, 2)
@@ -99,12 +93,10 @@ class OpcodeRep(Rep):
             # will take the next word literally, unless otherwise specified
             opcode_val = basic_opcodes[self.attrs['name']]
 
-            # print(self.attrs, list(map(type, self.attrs)))
-
-            # self.debug('perform {} operation with {} and {}'.format(
-            #     self.attrs['name'],
-            #     hex(self.attrs['frag_b']),
-            #     hex(self.attrs['frag_a'])))
+            self.assembler_ref.log_file.debug('perform {} operation with {} and {}'.format(
+                self.attrs['name'],
+                hex(self.attrs['frag_b']),
+                hex(self.attrs['frag_a'])))
 
             opcode_frag_b = self.attrs['frag_b']
 

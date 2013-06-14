@@ -24,10 +24,11 @@ def main():
         state = {
             'input_directory': os.path.abspath(os.path.dirname(input_filename))
         }
-        asm = Assembler(state)
-
-        asm.debug_toggle = args.debug
-        asm.endian = 'big' if args.big_endian else 'little'
+        endianness = 'big' if args.big_endian else 'little'
+        asm = Assembler(
+            state=state,
+            debug_toggle=args.debug,
+            endianness=endianness)
 
         with open(input_filename) as file_handle:
             raw_assembly = file_handle.readlines()
