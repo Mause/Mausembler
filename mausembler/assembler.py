@@ -57,14 +57,17 @@ class Assembler(object):
         ]
 
     def assemble(self, assembly):
+        # parse the provided assembly into objects
         self.log_file.info('Parsing base file')
         assembly = self._do_assemble(assembly)
 
+        # resolve the assembly into hex
         self.log_file.info('Resolving parsed assembly into hex')
         self.state['assembly'] = assembly
         byte_code = self.resolve_machine_code_hex(assembly)
         del self.state['assembly']
 
+        # and pack that hex into a single bytestring
         self.log_file.info('Packing hex')
         packed_byte_code = self.pack_byte_code(byte_code)
 
@@ -78,18 +81,26 @@ class Assembler(object):
         assembly = self.resolve(assembly, DirectiveRep)
         assembly = self.resolve(assembly, LabelRep)
 
+        # resolve those that remain... there shouldn't be any, but w/e
+        assembly = self.resolve(assembly, object)
+
         return assembly
 
     def resolve_machine_code_hex(self, assembly):
-        byte_code = []
-        for opcode in assembly:
-            hexed = opcode.hexlify(self.state)
+        exclude = {LabelRep, CommentRep}
 
-            if not isinstance(opcode, LabelRep) and not isinstance(opcode, CommentRep):
-                assert hexed is not None, (hexed, opcode)
-                byte_code.append(hexed)
+        assembly = (
+            opcode
+            for opcode in assembly
+            if type(opcode) not in exclude
+        )
 
-        return byte_code
+        byte_code = (
+            opcode.hexlify(self.state)
+            for opcode in assembly
+        )
+
+        return list(byte_code)
 
     def resolve(self, assembly, of_class):
         changes_to_resolve = True
@@ -109,7 +120,7 @@ class Assembler(object):
                     result = rep.resolve(self.state)
 
                     # if something can be resolved
-                    if result[0]:
+                    if result and result[0]:
                         # if this opcode resolves to new assembly
                         if result[0] == 'new_assembly':
                             for sub_rep in self._do_assemble(result[1]):
