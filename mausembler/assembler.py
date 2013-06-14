@@ -129,10 +129,10 @@ class Assembler(object):
                     result = rep.resolve(self.state)
 
                     # if something can be resolved
-                    if result and result[0]:
+                    if result:
                         # if this opcode resolves to new assembly
-                        if result[0] == 'new_assembly':
-                            for sub_rep in self._do_assemble(result[1]):
+                        if 'new_assembly' in result:
+                            for sub_rep in self._do_assemble(result['new_assembly']):
                                 # loop through the new assembly,
                                 # and insert it all after the current opcode
                                 assembly.insert(index + 1, sub_rep)

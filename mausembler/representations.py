@@ -24,7 +24,18 @@ class Rep(object):
         # this is used for special actions, such as opcodes or instructions
         # that expand out into more opcodes
         # atm, the only action implemented is 'new_assembly'
-        return None, None
+        return {}
+
+    def resolve_frag(self, frag):
+        if frag[0:2] == '0b':
+            frag = int(frag, 2)
+        elif frag[0:2] == '0x':
+            frag = int(frag, 16)
+
+        elif frag.upper() in values:
+            frag = values[frag.upper()]
+
+        return frag
 
 
 class CommentRep(Rep):
@@ -46,18 +57,6 @@ class LabelRep(Rep):
 class OpcodeRep(Rep):
     REF_RE = re.compile(r'\[(?P<ref_content>.*)\]')
     LITERAL_RE = re.compile(r'(?:0x|0b)?\d+')
-    debug_toggle = True
-
-    def resolve_frag(self, frag):
-        if frag[0:2] == '0b':
-            frag = int(frag, 2)
-        elif frag[0:2] == '0x':
-            frag = int(frag, 16)
-
-        elif frag.upper() in values:
-            frag = values[frag.upper()]
-
-        return frag
 
     def assemble_opcode(self):
         "Does the actual parsing and assembling"
@@ -215,8 +214,8 @@ class BasicOpcodeRep(OpcodeRep):
     def size(self):
         return 2
 
-    def resolve(self, state):
-        pass
+    # def resolve(self, state):
+    #     pass
 
 
 class SpecialOpcodeRep(OpcodeRep):
@@ -261,7 +260,9 @@ class IncludeDirectiveRep(DirectiveRep):
 
         try:
             with open(filename) as dep_handler:
-                return 'new_assembly', dep_handler.readlines()
+                return {
+                    'new_assembly': dep_handler.readlines()
+                }
         except FileNotFoundError as e:
             raise FileNotFoundError(
                 'Loading include failed with; {}'.format(e))
@@ -272,7 +273,15 @@ class DataLiteralRep(DirectiveRep):
         return "<DataLit: {}>".format(self.attrs['content'])
 
     def size(self):
-        raise NotImplementedError()
+        # TODO: fix this. its kinda silly
+
+        content = self.resolve_frag(self.attrs['content'])
+        if type(content) == str:
+            length = len(content.encode('ascii'))
+        else:
+            length = len(hex(content)[2:]) % 2 ** 16
+
+        return length
 
     def hexlify(self, state):
         content = self.attrs['content']
