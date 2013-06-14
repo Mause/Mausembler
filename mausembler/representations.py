@@ -1,21 +1,11 @@
 import os
 import re
-import logging
 
 from .definitions import basic_opcodes, values, special_opcodes
 
 
 class ReferenceRep(object):
     pass
-
-
-# class Expression(object):
-#     def __init__(self, expr):
-#         self.HEX_RE = re.compile(r'(0x\d+)')
-#         self.BIN_RE = re.compile(r'(0b[01]+)')
-
-#     def resolve(self):
-#         return 'new_assembly'
 
 
 class Rep(object):
@@ -111,9 +101,9 @@ class OpcodeRep(Rep):
             # In binary, they have the format: aaaaaaooooo00000
             opcode_val = special_opcodes[self.attrs['name']]
 
-            self.debug('perform {} operation with {}'.format(
+            self.assembler_ref.log_file.debug('perform {} operation with {}'.format(
                 self.attrs['name'],
-                hex(self.attrs['frag_a'])))
+                self.attrs['frag_a']))
 
             final = self._assemble_opcode(
                 opcode_val,
@@ -236,12 +226,15 @@ class SpecialOpcodeRep(OpcodeRep):
             self.attrs['frag_a'])
 
     def hexlify(self, state):
+        self.state = state
         # TODO: add code here to resolve label references
 
         self.resolve_expressions()
 
-        h = self.assemble_opcode(self)
+        h = self.assemble_opcode()
         assert h, h
+
+        del self.state
         return h
 
 

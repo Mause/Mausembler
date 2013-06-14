@@ -7,7 +7,8 @@ import struct
 import logging
 # from pprint import pprint
 
-from .custom_errors import DuplicateLabelError, DASMSyntaxError
+from .definitions import values, special_opcodes, basic_opcodes
+from .custom_errors import DuplicateLabelError, DASMSyntaxError, ReservedKeyword
 from .representations import (
     LabelRep,
     CommentRep,
@@ -46,8 +47,8 @@ class Assembler(object):
         self.log_file.setLevel(logging.INFO)
 
         # setup the regex's
-        BASIC_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<B>(?:0x|0b)?(?:\d+|\w+)),? (?P<A>(?:0x|0b)?(?:\d+|\w+))\s*(?:;.*)?")
-        SPECI_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<A>(?:0x|0b)?(?:\d+|\w+))'                             '\s*(?:;.*)?")
+        BASIC_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<B>(?:0x|0b)?(?:\d+|[/*-+\[\]\w]+)),? (?P<A>(?:0x|0b)?(?:\d+|[/*-+\[\]\w]+))\s*(?:;.*)?")
+        SPECI_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<A>(?:0x|0b)?(?:\d+|[/*-+\[\]\w]+))"                                      r"\s*(?:;.*)?")
         LABEL_RE = re.compile(r"\s*:(?P<name>[a-zA-Z0-9]+)\s*(?:;.*)?")
         DIRECTIVE_RE = re.compile(r"\s*\.(?P<name>[a-zA-Z0-9]+)\s*(?P<extra_params>.*)\s*(?:;.*)?")
         COMMENT_RE = re.compile(r"\s*;(?P<content>.*)")
@@ -158,6 +159,7 @@ class Assembler(object):
             # check a regex against each line of assembly
             for regex, function in self.syntax_regex_mapping:
                 match = regex.match(line)
+
                 if match:
                     # if one matches, run the specified function against the match
                     verified_assembly.append(function(match))
@@ -215,6 +217,10 @@ class Assembler(object):
     def handle_label(self, match):
         "grab info from match and create a LabelRep object"
         name = match.groupdict()['name'].rstrip()
+
+        if name in values or name in special_opcodes or name in basic_opcodes:
+            raise ReservedKeyword(name)
+
         if name in self.labels:
             raise DuplicateLabelError('{} found twice'.format(name))
         else:

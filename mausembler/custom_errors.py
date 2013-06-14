@@ -1,6 +1,10 @@
 
 
-class DuplicateLabelError(Exception):
+class AssemblerException(Exception):
+    pass
+
+
+class DuplicateLabelError(AssemblerException):
     def __init__(self, value):
         self.value = value
 
@@ -12,9 +16,17 @@ class DuplicateLabelError(Exception):
             self.value[3])
 
 
-class DASMSyntaxError(Exception):
+class DASMSyntaxError(AssemblerException):
     def __init__(self, value):
         self.value = value
 
     def __repr__(self):
         return '"{}" was not recognised as valid assembly'.format(self.value)
+
+
+class ReservedKeyword(AssemblerException):
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return '"{}" is a reserved keyword'.format(self.value)
