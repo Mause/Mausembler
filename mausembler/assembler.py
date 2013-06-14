@@ -22,12 +22,15 @@ from .representations import (
 class Assembler(object):
     "Does the assembling stuff :D"
     def __init__(self, state=None, debug_toggle=None, endianness=None):
+        "performs initalisation"
         self.labels = {}
 
+        # process args
         self.debug_toggle = debug_toggle if debug_toggle is not None else False
         self.endianness = endianness if endianness is not None else 'little'
         self.state = {} if not state else state
 
+        # setup logging
         self.log_file = logging.getLogger('Mausembler')
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 
@@ -42,12 +45,14 @@ class Assembler(object):
 
         self.log_file.setLevel(logging.INFO)
 
+        # setup the regex's
         BASIC_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<B>(?:0x|0b)?(?:\d+|\w+)),? (?P<A>(?:0x|0b)?(?:\d+|\w+))\s*(?:;.*)?")
         SPECI_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<A>(?:0x|0b)?(?:\d+|\w+))'                             '\s*(?:;.*)?")
         LABEL_RE = re.compile(r"\s*:(?P<name>[a-zA-Z0-9]+)\s*(?:;.*)?")
         DIRECTIVE_RE = re.compile(r"\s*\.(?P<name>[a-zA-Z0-9]+)\s*(?P<extra_params>.*)\s*(?:;.*)?")
         COMMENT_RE = re.compile(r"\s*;(?P<content>.*)")
 
+        # map the regex's to processing functions
         self.syntax_regex_mapping = [
             (BASIC_OPCODE_RE, self.handle_basic_opcode),
             (SPECI_OPCODE_RE, self.handle_special_opcode),
@@ -57,6 +62,7 @@ class Assembler(object):
         ]
 
     def assemble(self, assembly):
+        "assembles the provided assembly"
         # parse the provided assembly into objects
         self.log_file.info('Parsing base file')
         assembly = self._do_assemble(assembly)
@@ -74,6 +80,7 @@ class Assembler(object):
         return packed_byte_code
 
     def _do_assemble(self, assembly):
+        "parses and resolves provided assembly into base assembly"
         # format the assembly into a usuable format
         assembly = self.parse(assembly)
 
@@ -87,6 +94,7 @@ class Assembler(object):
         return assembly
 
     def resolve_machine_code_hex(self, assembly):
+        "resolves all provided assembly objects into their hex representation"
         exclude = {LabelRep, CommentRep}
 
         assembly = (
@@ -103,12 +111,13 @@ class Assembler(object):
         return list(byte_code)
 
     def resolve(self, assembly, of_class):
+        "iterates through assembly, filtering by of_class, and resolves everything"
         changes_to_resolve = True
 
         # whilst there are parts to resolve
         while changes_to_resolve:
             # record the number of changes this loop
-            changes_this_loop = 0
+            changes_this_loop = False
 
             # iterate through the opcodes
             for index, rep in enumerate(assembly):
@@ -116,7 +125,6 @@ class Assembler(object):
                 # we are doing stuff in a certain order,
                 # so we make sure we are resolving the right types
                 if issubclass(rep.__class__, of_class):
-                    # self.state['assembly'] = assembly
                     result = rep.resolve(self.state)
 
                     # if something can be resolved
@@ -124,36 +132,44 @@ class Assembler(object):
                         # if this opcode resolves to new assembly
                         if result[0] == 'new_assembly':
                             for sub_rep in self._do_assemble(result[1]):
+                                # loop through the new assembly,
+                                # and insert it all after the current opcode
                                 assembly.insert(index + 1, sub_rep)
-                                changes_this_loop += 1
+                                changes_this_loop = True
 
                         # remove the resolved opcode
                         assembly.pop(index)
 
-            if changes_this_loop == 0:
+            if not changes_this_loop:
+                # if there weren't any changes this loop, consider everything that can
+                # be resolved resolved, and exit the loop
                 changes_to_resolve = False
 
-        # if 'assembly' in self.state:
-        #     del self.state['assembly']
         return assembly
 
     def parse(self, assembly):
+        "runs all regex's against provided assembly"
+        # filter out extra whitespace and empty lines
         assembly = map(str.rstrip, assembly)
         assembly = filter(bool, assembly)
 
         verified_assembly = []
         for line in assembly:
+            # check a regex against each line of assembly
             for regex, function in self.syntax_regex_mapping:
                 match = regex.match(line)
                 if match:
+                    # if one matches, run the specified function against the match
                     verified_assembly.append(function(match))
                     break
             else:
+                # if none of the regex's match, throw an error
                 raise DASMSyntaxError(line)
 
         return verified_assembly
 
     def handle_basic_opcode(self, match):
+        "grab info from match and create a BasicOpcodeRep object"
         cur_op = BasicOpcodeRep(
             assembler_ref=self,
             name=match.groupdict()['name'].upper(),
@@ -163,6 +179,7 @@ class Assembler(object):
         return cur_op
 
     def handle_special_opcode(self, match):
+        "grab info from match and create a SpecialOpcodeRep object"
         cur_op = SpecialOpcodeRep(
             assembler_ref=self,
             name=match.groupdict()['name'].upper(),
@@ -171,6 +188,10 @@ class Assembler(object):
         return cur_op
 
     def handle_directive(self, match):
+        """grabs info from match,
+        determines what kind of directive it is,
+        then returns the appropriate object"""
+
         name = match.groupdict()['name'].rstrip().upper()
         extra_params = match.groupdict()['extra_params']
 
@@ -185,12 +206,14 @@ class Assembler(object):
                 name=name,
                 content=extra_params)
         else:
-            return DirectiveRep(
-                assembler_ref=self,
-                name=name,
-                extra_params=extra_params)
+            raise Exception('Unknown Directive: {}'.format(name))
+            # return DirectiveRep(
+            #     assembler_ref=self,
+            #     name=name,
+            #     extra_params=extra_params)
 
     def handle_label(self, match):
+        "grab info from match and create a LabelRep object"
         name = match.groupdict()['name'].rstrip()
         if name in self.labels:
             raise DuplicateLabelError('{} found twice'.format(name))
@@ -202,6 +225,7 @@ class Assembler(object):
             name=name)
 
     def handle_comment(self, match):
+        "grab info from match and create a CommentRep object"
         return CommentRep(
             assembler_ref=self,
             content=match.groupdict()['content'])
@@ -211,10 +235,14 @@ class Assembler(object):
         Outputs hex to file
         used http://stackoverflow.com/a/3855178/1433288 for reference
         """
+        # determine how big it should be
         fmt = '{}L'.format(len(hex_list))
+
+        # set endianness
         if self.endianness == 'little':
             fmt = '<' + fmt
         else:
             fmt = '>' + fmt
 
+        # pack hex
         return struct.pack(fmt, *hex_list)

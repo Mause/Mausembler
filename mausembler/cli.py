@@ -1,9 +1,9 @@
 import os
+import argparse
 from .assembler import Assembler
 
 
 def main():
-    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("input_filename")
     parser.add_argument("output_filename")
@@ -37,7 +37,8 @@ def main():
 
         with open(output_filename, 'wb') as fh:
             fh.write(byte_code)
-        print('Done')
+
+        asm.log_file.info('Done')
 
 if __name__ == '__main__':
     main()
