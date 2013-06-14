@@ -4,10 +4,9 @@
 import re
 import struct
 import logging
-from pprint import pprint
+# from pprint import pprint
 
-from .definitions import *
-from .custom_errors import DuplicateLabelError
+from .custom_errors import DuplicateLabelError, DASMSyntaxError
 from .representations import (
     LabelRep,
     CommentRep,
@@ -60,14 +59,17 @@ class Assembler(object):
         logging.info(data)
 
     def assemble(self, assembly):
+        self.debug('Parsing base file')
         assembly = self._do_assemble(assembly)
 
+        self.debug('Resolving parsed assembly into hex')
         self.state['assembly'] = assembly
         byte_code = self.resolve_machine_code_hex(assembly)
         del self.state['assembly']
-        pprint(list(map(hex, byte_code)))
 
+        self.debug('Packing hex')
         packed_byte_code = self.pack_byte_code(byte_code)
+
         return packed_byte_code
 
     def _do_assemble(self, assembly):
@@ -97,15 +99,15 @@ class Assembler(object):
         # whilst there are parts to resolve
         while changes_to_resolve:
             # record the number of changes this loop
-
             changes_this_loop = 0
+
+            # iterate through the opcodes
             for index, rep in enumerate(assembly):
-                # iterate through the opcodes
 
                 # we are doing stuff in a certain order,
                 # so we make sure we are resolving the right types
                 if issubclass(rep.__class__, of_class):
-                    self.state['assembly'] = assembly
+                    # self.state['assembly'] = assembly
                     result = rep.resolve(self.state)
 
                     # if something can be resolved
@@ -122,8 +124,8 @@ class Assembler(object):
             if changes_this_loop == 0:
                 changes_to_resolve = False
 
-        if 'assembly' in self.state:
-            del self.state['assembly']
+        # if 'assembly' in self.state:
+        #     del self.state['assembly']
         return assembly
 
     def parse(self, assembly):
@@ -136,6 +138,8 @@ class Assembler(object):
                 if match:
                     verified_assembly.append(function(match))
                     break
+            else:
+                raise DASMSyntaxError(line)
 
         return verified_assembly
 

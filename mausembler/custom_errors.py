@@ -1,4 +1,3 @@
-import os
 
 
 class DuplicateLabelError(Exception):
@@ -6,20 +5,16 @@ class DuplicateLabelError(Exception):
         self.value = value
 
     def __repr__(self):
-        return 'Two instances of the label "'+self.value[0]+'" were found in the file '+self.value[1]+'\n* '+str(self.value[2][self.value[0]])+'\n* '+str(self.value[3])
+        return 'Two instances of the label "{}" were found in the file {}\n* {}\n* {}'.format(
+            self.value[0],
+            self.value[1],
+            self.value[2][self.value[0]],
+            self.value[3])
 
 
-class FileNonExistantError(Exception):
+class DASMSyntaxError(Exception):
     def __init__(self, value):
         self.value = value
 
     def __repr__(self):
-        return 'The file "'+self.value+'" cannot be found in the directory '+os.getcwd()
-
-
-class FileExistsError(Exception):
-    def __init__(self, value):
-        self.value = value
-
-    def __repr__(self):
-        return 'The file "'+self.value+'" already exists, and the user chose not to overwrite it'
+        return '"{}" was not recognised as valid assembly'.format(self.value)

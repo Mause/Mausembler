@@ -36,7 +36,7 @@ def main():
 
         with open(output_filename, 'wb') as fh:
             fh.write(byte_code)
-
+        print('Done')
 
 if __name__ == '__main__':
     main()
