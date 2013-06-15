@@ -5,7 +5,11 @@ from .assembler import Assembler
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description='Quick and dirty DCPU-16 assembler',
+        epilog='''Report mausembler bugs to <https://github.com/Mause/Mausembler/issues>\nEmail me: me@mause.me''',
+        formatter_class=argparse.RawTextHelpFormatter
+    )
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     parser.add_argument("input_filename")
     parser.add_argument("output_filename")
