@@ -89,10 +89,10 @@ class OpcodeRep(Rep):
             # will take the next word literally, unless otherwise specified
             opcode_val = basic_opcodes[self.attrs['name']]
             self.assembler_ref.log_file.debug(self.attrs)
-            self.assembler_ref.log_file.debug('perform {} operation with {} and {}'.format(
-                self.attrs['name'],
-                hex(self.attrs['frag_b']),
-                hex(self.attrs['frag_a'])))
+            # self.assembler_ref.log_file.debug('perform {} operation with {} and {}'.format(
+                # self.attrs['name'],
+                # hex(self.attrs['frag_b']),
+                # hex(self.attrs['frag_a'])))
 
             opcode_frag_b = self.attrs['frag_b']
 
@@ -107,9 +107,9 @@ class OpcodeRep(Rep):
             # In binary, they have the format: aaaaaaooooo00000
             opcode_val = special_opcodes[self.attrs['name']]
 
-            self.assembler_ref.log_file.debug('perform {} operation with {}'.format(
-                self.attrs['name'],
-                self.attrs['frag_a']))
+            # self.assembler_ref.log_file.debug('perform {} operation with {}'.format(
+            #     self.attrs['name'],
+            #     self.attrs['frag_a']))
 
             final = self._assemble_opcode(
                 opcode_val,

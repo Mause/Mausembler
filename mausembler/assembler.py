@@ -157,6 +157,8 @@ class Assembler(object):
 
                 if match:
                     # if one matches, run the specified function against the match
+                    # self.log_file.debug('"{}" matched for function {}'.format(
+                    #     line, function.__name__))
                     verified_assembly.append(function(match))
                     break
             else:
