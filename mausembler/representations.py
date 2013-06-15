@@ -277,9 +277,10 @@ class DataLiteralRep(DirectiveRep):
 
         content = self.resolve_frag(self.attrs['content'])
         if type(content) == str:
+            # TODO: determine if this is what we should be doing
             length = len(content.encode('ascii'))
         else:
-            length = len(hex(content)[2:]) % 2 ** 16
+            length = len(hex(content)[2:]) % len(hex(2 ** 16)[2:])
 
         return length
 
