@@ -1,16 +1,17 @@
 import os
+import logging
 import argparse
 from .assembler import Assembler
 
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     parser.add_argument("input_filename")
     parser.add_argument("output_filename")
-    parser.add_argument("--credits", help="prints credits and exits")
+    parser.add_argument("--credits", help="prints credits and exits", action="store_true")
     parser.add_argument("--big-endian", help="enables big endian. defaults to little")
-    parser.add_argument(
-        "-d", "--debug", help="enable debug mode", action="store_true")
+    parser.add_argument("-v", "--verbose", help="increases verbosity", action="count")
     args = parser.parse_args()
 
     if args.credits:
@@ -18,6 +19,14 @@ def main():
         print('Secondly, startling! For answering my questions!')
         print('And thirdly, me. For writing the code')
     else:
+        # calculate verbosity
+        if args.verbose == 1:
+            verbosity = logging.INFO
+        elif args.verbose == 2:
+            verbosity = logging.DEBUG
+        else:
+            verbosity = None
+
         input_filename = os.path.abspath(args.input_filename)
         output_filename = os.path.abspath(args.output_filename)
 
@@ -27,7 +36,7 @@ def main():
         endianness = 'big' if args.big_endian else 'little'
         asm = Assembler(
             state=state,
-            debug_toggle=args.debug,
+            verbosity=verbosity,
             endianness=endianness)
 
         with open(input_filename) as file_handle:

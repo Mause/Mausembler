@@ -27,6 +27,13 @@ class Rep(object):
         return {}
 
     def resolve_frag(self, frag):
+        try:
+            frag = int(frag)
+        except ValueError:
+            pass
+        else:
+            return frag
+
         if frag[0:2] == '0b':
             frag = int(frag, 2)
         elif frag[0:2] == '0x':
@@ -81,7 +88,7 @@ class OpcodeRep(Rep):
                 # aaaaaabbbbbooooo
             # will take the next word literally, unless otherwise specified
             opcode_val = basic_opcodes[self.attrs['name']]
-
+            self.assembler_ref.log_file.debug(self.attrs)
             self.assembler_ref.log_file.debug('perform {} operation with {} and {}'.format(
                 self.attrs['name'],
                 hex(self.attrs['frag_b']),
@@ -110,7 +117,7 @@ class OpcodeRep(Rep):
         else:
             raise Exception(self)
 
-        # print('final:', hex(final))
+        self.assembler_ref.log_file.debug('final: {}'.format(hex(final)))
 
         return final
 
@@ -140,12 +147,15 @@ class OpcodeRep(Rep):
         return final
 
     def resolve_expressions(self):
+        self.assembler_ref.log_file.debug(self.attrs)
         if 'frag_a' in self.attrs:
             self.attrs['frag_a'] = self.resolve_single_expression(self.attrs['frag_a'])
+            hex(self.attrs['frag_a'])
             assert self.attrs['frag_a'] is not None
 
         if 'frag_b' in self.attrs:
             self.attrs['frag_b'] = self.resolve_single_expression(self.attrs['frag_b'])
+            hex(self.attrs['frag_b'])
             assert self.attrs['frag_b'] is not None
 
     def resolve_single_expression(self, expression):
@@ -156,14 +166,14 @@ class OpcodeRep(Rep):
             return expression
 
         if not self.LITERAL_RE.match(expression):
-            # print('not literal:', expression)
+            self.assembler_ref.log_file.debug('not literal: {}'.format(expression))
 
             match = self.REF_RE.match(expression)
             if match:
-                print('is reference:', match.groups())
+                self.assembler_ref.log_file.debug('is reference:', match.groups())
 
             else:
-                # print('is label:', expression)
+                self.assembler_ref.log_file.debug('is label: {}'.format(expression))
                 expression = self.resolve_label(expression)
                 assert expression
 
@@ -236,6 +246,9 @@ class SpecialOpcodeRep(OpcodeRep):
         del self.state
         return h
 
+    def size(self):
+        return 1
+
 
 class DirectiveRep(Rep):
     def size(self):
@@ -263,6 +276,7 @@ class IncludeDirectiveRep(DirectiveRep):
                 return {
                     'new_assembly': dep_handler.readlines()
                 }
+
         except FileNotFoundError as e:
             raise FileNotFoundError(
                 'Loading include failed with; {}'.format(e))

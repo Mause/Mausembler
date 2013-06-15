@@ -22,29 +22,29 @@ from .representations import (
 
 class Assembler(object):
     "Does the assembling stuff :D"
-    def __init__(self, state=None, debug_toggle=None, endianness=None):
+    def __init__(self, state=None, verbosity=None, endianness=None):
         "performs initalisation"
         self.labels = {}
 
         # process args
-        self.debug_toggle = debug_toggle if debug_toggle is not None else False
-        self.endianness = endianness if endianness is not None else 'little'
-        self.state = {} if not state else state
+        self.verbosity = logging.INFO if verbosity is None else verbosity
+        self.endianness = 'little' if endianness is None else endianness
+        self.state = state if state else {}
 
         # setup logging
         self.log_file = logging.getLogger('Mausembler')
-        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 
         hdlr = logging.FileHandler('Mausembler.log')
         hdlr.setFormatter(formatter)
         self.log_file.addHandler(hdlr)
 
-        if debug_toggle:
+        if verbosity is not None:
             stdout_hdlr = logging.StreamHandler(sys.stdout)
             stdout_hdlr.setFormatter(formatter)
             self.log_file.addHandler(stdout_hdlr)
 
-        self.log_file.setLevel(logging.INFO)
+        self.log_file.setLevel(self.verbosity)
 
         # setup the regex's
         BASIC_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<B>(?:0x|0b)?(?:\d+|[/*-+\[\]\w]+)),? (?P<A>(?:0x|0b)?(?:\d+|[/*-+\[\]\w]+))\s*(?:;.*)?")
@@ -98,15 +98,10 @@ class Assembler(object):
         "resolves all provided assembly objects into their hex representation"
         exclude = {LabelRep, CommentRep}
 
-        assembly = (
-            opcode
-            for opcode in assembly
-            if type(opcode) not in exclude
-        )
-
         byte_code = (
             opcode.hexlify(self.state)
             for opcode in assembly
+            if type(opcode) not in exclude
         )
 
         return list(byte_code)
