@@ -30,3 +30,7 @@ class ReservedKeyword(AssemblerException):
 
     def __repr__(self):
         return '"{}" is a reserved keyword'.format(self.value)
+
+
+class UnknownDirective(AssemblerException):
+    pass

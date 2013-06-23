@@ -9,8 +9,10 @@ class ReferenceRep(object):
 
 
 class Rep(object):
-    def __init__(self, assembler_ref, **kwargs):
+    def __init__(self, assembler_ref, line_number, filename, **kwargs):
         self.assembler_ref = assembler_ref
+        self.line_number = line_number
+        self.filename = filename
         self.attrs = kwargs
 
     def size(self):
@@ -20,7 +22,7 @@ class Rep(object):
         # this doesn't strictly have to return anything
         return None
 
-    def resolve(self, state):
+    def resolve(self, state, filename):
         # this is used for special actions, such as opcodes or instructions
         # that expand out into more opcodes
         # atm, the only action implemented is 'new_assembly'
@@ -52,9 +54,14 @@ class CommentRep(Rep):
     def hexlify(self, state):
         return None
 
+    def size(self):
+        # comments dont have size!
+        return 0
+
 
 class LabelRep(Rep):
     def size(self):
+        # labels dont have size!
         return 0
 
     def __repr__(self):
@@ -79,7 +86,7 @@ class OpcodeRep(Rep):
         assert (
             self.attrs['name'] in basic_opcodes or
             self.attrs['name'] in special_opcodes
-        )
+        ), self.attrs['name']
 
         opcode_frag_a = self.attrs['frag_a']
 
@@ -150,12 +157,20 @@ class OpcodeRep(Rep):
         self.assembler_ref.log_file.debug(self.attrs)
         if 'frag_a' in self.attrs:
             self.attrs['frag_a'] = self.resolve_single_expression(self.attrs['frag_a'])
-            hex(self.attrs['frag_a'])
+
+            try:
+                hex(self.attrs['frag_a'])
+            except TypeError as e:
+                print(e, self.attrs['frag_a'])
             assert self.attrs['frag_a'] is not None
 
         if 'frag_b' in self.attrs:
             self.attrs['frag_b'] = self.resolve_single_expression(self.attrs['frag_b'])
-            hex(self.attrs['frag_b'])
+
+            try:
+                hex(self.attrs['frag_b'])
+            except TypeError as e:
+                print(e, self.attrs['frag_b'])
             assert self.attrs['frag_b'] is not None
 
     def resolve_single_expression(self, expression):
@@ -183,8 +198,8 @@ class OpcodeRep(Rep):
         if label_name not in self.assembler_ref.labels:
             raise Exception('No such label: {}'.format(label_name))
 
-        if self.assembler_ref.labels[label_name] is not None:
-            return self.assembler_ref.labels[label_name]
+        if self.assembler_ref.labels[label_name]['address'] is not None:
+            return self.assembler_ref.labels[label_name]['address']
         else:
             # this is where we determine the address for the label
             address = 0x0
@@ -197,7 +212,7 @@ class OpcodeRep(Rep):
             else:
                 raise Exception('label not found?! wut?!')
 
-            self.assembler_ref.labels[label_name] = address
+            self.assembler_ref.labels[label_name]['address'] = address
 
         return address
 
@@ -264,7 +279,7 @@ class DirectiveRep(Rep):
 
 
 class IncludeDirectiveRep(DirectiveRep):
-    def resolve(self, state):
+    def resolve(self, state, filename):
         "Loads an included file"
 
         filename = self.attrs['extra_params'].rstrip()
@@ -274,7 +289,8 @@ class IncludeDirectiveRep(DirectiveRep):
         try:
             with open(filename) as dep_handler:
                 return {
-                    'new_assembly': dep_handler.readlines()
+                    'new_assembly': dep_handler.readlines(),
+                    'filename': filename
                 }
 
         except FileNotFoundError as e:

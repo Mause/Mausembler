@@ -26,29 +26,32 @@ try:
 except (WindowsError, OSError):
     pass  # ok, that file doesnt exist
 
+print('0. All')
 for index, test in enumerate(OPTIONS):
     print('{}. {}'.format(index + 1, test[0].replace('_', ' ')))
 
 
 def get_test():
-    TEST_NUM = input('Please enter a number: ')
-    return int(TEST_NUM) if int(TEST_NUM) in range(1, len(OPTIONS) + 1) else get_test()
+    test_num = input('Please enter a number: ')
+    return int(test_num) if int(test_num) in range(0, len(OPTIONS) + 1) else get_test()
 
-TEST_NUM = get_test() - 1
-
-print(OPTIONS[TEST_NUM - 1][1])
-
-# if TEST_NUM == 0:
-#     for TEST_NUM in POSSIBLES[1:]:
-#         TEST_NUM = int(TEST_NUM)
-#         INPUT_FILENAME = OPTIONS[OPTIONS[TEST_NUM - 1]][0]
-#         OUTPUT_FILENAME = OPTIONS[OPTIONS[TEST_NUM - 1]][1]
-#         INST.load(INPUT_FILENAME, OUTPUT_FILENAME)
-# else:
+test_num = get_test()
 
 import sys
-sys.argv += [
-    OPTIONS[TEST_NUM - 1][1],
-    'null.bin'
-]
-cli.main()
+if test_num == 0:
+    for test_num in OPTIONS[1:]:
+        sys.argv = [
+            0,
+            test_num[0],
+            test_num[1]
+        ]
+        try:
+            cli.main()
+        except Exception as e:
+            print(test_num[0], 'failed with {}: {}'.format(type(e), e))
+else:
+    sys.argv += [
+        OPTIONS[test_num - 1][1],
+        'null.bin'
+    ]
+    cli.main()

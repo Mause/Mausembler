@@ -8,7 +8,12 @@ import logging
 # from pprint import pprint
 
 from .definitions import values, special_opcodes, basic_opcodes
-from .custom_errors import DuplicateLabelError, DASMSyntaxError, ReservedKeyword
+from .custom_errors import (
+    DuplicateLabelError,
+    DASMSyntaxError,
+    ReservedKeyword,
+    UnknownDirective
+)
 from .representations import (
     LabelRep,
     CommentRep,
@@ -49,7 +54,7 @@ class Assembler(object):
         # setup the regex's
         BASIC_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<B>(?:0x|0b)?(?:\d+|[/*-+\[\]\w]+)),? (?P<A>(?:0x|0b)?(?:\d+|[/*-+\[\]\w]+))\s*(?:;.*)?")
         SPECI_OPCODE_RE = re.compile(r"\s*(?P<name>[a-zA-Z]{3}) (?P<A>(?:0x|0b)?(?:\d+|[/*-+\[\]\w]+))"                                      r"\s*(?:;.*)?")
-        LABEL_RE = re.compile(r"\s*:(?P<name>[a-zA-Z0-9]+)\s*(?:;.*)?")
+        LABEL_RE = re.compile(r"\s*:(?P<name>[a-zA-Z0-9\_\-]+)\s*(?:;.*)?")
         DIRECTIVE_RE = re.compile(r"\s*\.(?P<name>[a-zA-Z0-9]+)\s*(?P<extra_params>.*)\s*(?:;.*)?")
         COMMENT_RE = re.compile(r"\s*;(?P<content>.*)")
 
@@ -62,11 +67,11 @@ class Assembler(object):
             (COMMENT_RE, self.handle_comment)
         ]
 
-    def assemble(self, assembly):
+    def assemble(self, assembly, filename='base_file'):
         "assembles the provided assembly"
         # parse the provided assembly into objects
-        self.log_file.info('Parsing base file')
-        assembly = self._do_assemble(assembly)
+        self.log_file.info('Parsing and resolving base file')
+        assembly = self._parse_and_resolve(assembly, filename)
 
         # resolve the assembly into hex
         self.log_file.info('Resolving parsed assembly into hex')
@@ -80,17 +85,23 @@ class Assembler(object):
 
         return packed_byte_code
 
-    def _do_assemble(self, assembly):
+    def _parse_and_resolve(self, assembly, filename=None):
         "parses and resolves provided assembly into base assembly"
         # format the assembly into a usuable format
-        assembly = self.parse(assembly)
+
+        self.log_file.debug('Parsing...')
+        assembly = self.parse(assembly, filename)
 
         # resolve various specials
-        assembly = self.resolve(assembly, DirectiveRep)
-        assembly = self.resolve(assembly, LabelRep)
+        self.log_file.debug('Resolving DirectiveRep\'s')
+        assembly = self.resolve(assembly, DirectiveRep, filename)
+
+        self.log_file.debug('Resolving LabelRep\'s')
+        assembly = self.resolve(assembly, LabelRep, filename)
 
         # resolve those that remain... there shouldn't be any, but w/e
-        assembly = self.resolve(assembly, object)
+        self.log_file.debug('Resolving misc\'s')
+        assembly = self.resolve(assembly, object, filename)
 
         return assembly
 
@@ -106,7 +117,7 @@ class Assembler(object):
 
         return list(byte_code)
 
-    def resolve(self, assembly, of_class):
+    def resolve(self, assembly, of_class, filename):
         "iterates through assembly, filtering by of_class, and resolves everything"
         changes_to_resolve = True
 
@@ -121,13 +132,13 @@ class Assembler(object):
                 # we are doing stuff in a certain order,
                 # so we make sure we are resolving the right types
                 if issubclass(rep.__class__, of_class):
-                    result = rep.resolve(self.state)
+                    result = rep.resolve(self.state, filename)
 
                     # if something can be resolved
                     if result:
                         # if this opcode resolves to new assembly
                         if 'new_assembly' in result:
-                            for sub_rep in self._do_assemble(result['new_assembly']):
+                            for sub_rep in self._parse_and_resolve(result['new_assembly'], result['filename']):
                                 # loop through the new assembly,
                                 # and insert it all after the current opcode
                                 assembly.insert(index + 1, sub_rep)
@@ -143,14 +154,18 @@ class Assembler(object):
 
         return assembly
 
-    def parse(self, assembly):
+    def parse(self, assembly, filename=None):
         "runs all regex's against provided assembly"
         # filter out extra whitespace and empty lines
         assembly = map(str.rstrip, assembly)
-        assembly = filter(bool, assembly)
 
         verified_assembly = []
-        for line in assembly:
+        for line_number, line in enumerate(assembly):
+            if not line:
+                continue
+            else:
+                self.log_file.debug('{}. {}'.format(line_number + 1, line))
+
             # check a regex against each line of assembly
             for regex, function in self.syntax_regex_mapping:
                 match = regex.match(line)
@@ -159,7 +174,8 @@ class Assembler(object):
                     # if one matches, run the specified function against the match
                     # self.log_file.debug('"{}" matched for function {}'.format(
                     #     line, function.__name__))
-                    verified_assembly.append(function(match))
+                    verified_assembly.append(
+                        function(match, line_number + 1, filename))
                     break
             else:
                 # if none of the regex's match, throw an error
@@ -167,26 +183,30 @@ class Assembler(object):
 
         return verified_assembly
 
-    def handle_basic_opcode(self, match):
+    def handle_basic_opcode(self, match, line_number, filename):
         "grab info from match and create a BasicOpcodeRep object"
         cur_op = BasicOpcodeRep(
             assembler_ref=self,
+            line_number=line_number,
+            filename=filename,
             name=match.groupdict()['name'].upper(),
             frag_a=match.groupdict()['A'],
             frag_b=match.groupdict()['B'],
         )
         return cur_op
 
-    def handle_special_opcode(self, match):
+    def handle_special_opcode(self, match, line_number, filename):
         "grab info from match and create a SpecialOpcodeRep object"
         cur_op = SpecialOpcodeRep(
             assembler_ref=self,
+            line_number=line_number,
+            filename=filename,
             name=match.groupdict()['name'].upper(),
             frag_a=match.groupdict()['A']
         )
         return cur_op
 
-    def handle_directive(self, match):
+    def handle_directive(self, match, line_number, filename):
         """grabs info from match,
         determines what kind of directive it is,
         then returns the appropriate object"""
@@ -197,21 +217,28 @@ class Assembler(object):
         if name == 'INCLUDE':
             return IncludeDirectiveRep(
                 assembler_ref=self,
+                line_number=line_number,
+                filename=filename,
                 name=name,
                 extra_params=extra_params)
         elif name == 'DAT':
             return DataLiteralRep(
                 assembler_ref=self,
+                line_number=line_number,
+                filename=filename,
                 name=name,
                 content=extra_params)
         else:
-            raise Exception('Unknown Directive: {}'.format(name))
+            raise UnknownDirective("{} on line {} of file \"{}\"".format(
+                name,
+                line_number,
+                filename))
             # return DirectiveRep(
             #     assembler_ref=self,
             #     name=name,
             #     extra_params=extra_params)
 
-    def handle_label(self, match):
+    def handle_label(self, match, line_number, filename):
         "grab info from match and create a LabelRep object"
         name = match.groupdict()['name'].rstrip()
 
@@ -219,18 +246,34 @@ class Assembler(object):
             raise ReservedKeyword(name)
 
         if name in self.labels:
-            raise DuplicateLabelError('{} found twice'.format(name))
+            raise DuplicateLabelError(
+                '{} found twice. '
+                'First time on line {} of "{}", '
+                'second on line {} of "{}"'.format(
+                    name,
+                    self.labels[name]['line_number'],
+                    self.labels[name]['filename'],
+                    line_number,
+                    filename))
         else:
-            self.labels[name] = None
+            self.labels[name] = {
+                'filename': filename,
+                'line_number': line_number,
+                'address': None
+            }
 
         return LabelRep(
             assembler_ref=self,
+            line_number=line_number,
+            filename=filename,
             name=name)
 
-    def handle_comment(self, match):
+    def handle_comment(self, match, line_number, filename):
         "grab info from match and create a CommentRep object"
         return CommentRep(
             assembler_ref=self,
+            line_number=line_number,
+            filename=filename,
             content=match.groupdict()['content'])
 
     def pack_byte_code(self, hex_list):
